@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#174b3a" />
+  <title>KaamSetu — Find work. Find workers.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Kalam:wght@400;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a href="#top" class="brand" aria-label="KaamSetu home">
+      <span class="brand-mark">↗</span><span>Kaam<span class="brand-accent">Setu</span></span>
+    </a>
+    <nav class="nav-links" aria-label="Main navigation">
+      <a href="#how" data-i18n="navHow">How it works</a>
+      <a href="#work-types" data-i18n="navWorkTypes">Work types</a>
+      <a href="#explore" data-open-explore data-i18n="navExploreJobs">Explore jobs</a>
+      <a href="#workers" data-open-workers data-i18n="navExploreWorkers">Explore workers</a>
+      <a href="#profile" data-open-profile data-i18n="navProfile">My profile</a>
+    </nav>
+    <div class="top-actions">
+      <button class="profile-link" data-open-profile data-i18n="navProfile">My profile</button>
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang active" data-lang="en">EN</button>
+        <button class="lang" data-lang="mr">मराठी</button>
+        <button class="lang" data-lang="hi">हिंदी</button>
+      </div>
+      <button class="menu-button" aria-label="Open menu"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero section-wrap">
+      <div class="hero-copy">
+       
+        <h1 data-i18n="headline">The right hands.<br><em>The right work.</em><br>Right nearby.</h1>
+        <p class="hero-text" data-i18n="heroText">A simple way for farmers to find dependable workers — and for workers to find fair work close to home.</p>
+        <div class="hero-ctas">
+          <button class="big-cta cta-orange" data-open-form="farmer"><span class="cta-icon">↗</span><span><strong data-i18n="findWorker">Find workers</strong></span></button>
+          <button class="big-cta cta-green" data-open-form="worker"><span class="cta-icon">↗</span><span><strong data-i18n="findWork">Find work</strong><small data-i18n="workerSub">I am looking for work</small></span></button>
+        </div>
+        <button class="hero-explore" data-open-explore>Explore available jobs ↗</button>
+        
+      </div>
+
+      <div class="hero-art" aria-label="Illustration of a farmer and worker at a labour naka">
+        <div class="sun-doodle"></div>
+        <div class="art-label label-naka"><span class="pin">+</span><span>कामाचा नाका<br><small>Work Naka</small></span></div>
+        <div class="art-label label-near"><span class="scribble-arrow">↙</span><span>near you<br><small>तुमच्या जवळ</small></span></div>
+        <div class="chat-doodles chat-one"><span>काम आहे?</span><b>☻</b></div>
+        <div class="chat-doodles chat-two"><b>☻</b><span>हो! चला!</span></div>
+        <img class="hero-generated" src="assets/kaamsetu-characters.png" alt="Indian farmer in a pheta and a general daily-wage worker with a phone and tool bag standing together" />
+        <svg class="doodle-scene" viewBox="0 0 620 540" role="img" aria-label="Doodle illustration of a farmer, worker, and crop field">
+          <path class="line" d="M28 463 C 124 437, 196 477, 288 452 S 482 444, 600 461" />
+          <path class="line thin" d="M44 480 C 158 459, 213 489, 321 470 S 503 468, 590 478" />
+          <path class="leaf" d="M140 443 C 116 406, 122 371, 146 341 C 154 389, 157 414, 140 443Z" />
+          <path class="leaf" d="M160 441 C 186 400, 215 388, 242 392 C 220 423, 190 443, 160 441Z" />
+          <path class="line" d="M151 441 C 159 398, 163 365, 173 327" />
+          <path class="leaf" d="M474 457 C 453 415, 463 379, 489 352 C 494 394, 493 425, 474 457Z" />
+          <path class="leaf" d="M490 457 C 515 419, 541 409, 564 416 C 546 443, 519 458, 490 457Z" />
+          <path class="line" d="M484 455 C 485 415, 491 374, 503 340" />
+          <g class="person farmer">
+            <path class="line" d="M281 319 C 258 331, 248 367, 252 420 L 259 463 M 341 321 C 359 348, 365 388, 357 460" />
+            <path class="shirt" d="M280 316 C 300 307, 326 308, 343 322 L 357 458 L 258 458 C 257 407, 251 354, 280 316Z" />
+            <path class="waistcoat" d="M294 321 L 309 349 L 325 321 L 337 452 L 282 452Z" />
+            <path class="line" d="M283 359 C 262 367, 244 380, 231 407 M 347 353 C 364 370, 379 379, 393 394" />
+            <path class="line thick" d="M230 406 L 210 437" />
+            <path class="dhoti" d="M282 451 L 306 451 L 302 480 L 273 480Z M 306 451 L 334 451 L 349 480 L 319 480Z" />
+            <circle class="skin" cx="312" cy="268" r="35" />
+            <path class="pheta" d="M269 252 C 277 226, 282 217, 301 211 C 326 209, 350 223, 359 247 C 337 240, 293 240, 269 252Z" />
+            <path class="pheta-fold" d="M294 216 C 299 231, 321 233, 342 222 M 280 233 C 306 243, 330 242, 352 235" />
+            <path class="line" d="M289 269 C 301 278, 319 280, 331 269 M 300 253 L 302 260" />
+            <path class="line" d="M283 301 C 299 317, 325 318, 343 302" />
+          </g>
+          <g class="person worker">
+            <path class="line" d="M421 332 C 406 361, 407 400, 413 465 M 488 335 C 510 370, 513 413, 507 464" />
+            <path class="sari" d="M420 328 C 440 316, 471 316, 490 333 L 507 463 L 413 463 C 408 410, 405 364, 420 328Z" />
+            <path class="pallu" d="M474 319 C 506 341, 526 354, 545 389 L 510 406 L 474 351Z" />
+            <circle class="skin" cx="454" cy="278" r="34" />
+            <path class="pallu head-cover" d="M422 265 C 432 231, 471 229, 492 263 C 478 255, 441 257, 422 274Z" />
+            <path class="line" d="M434 279 C 445 287, 460 288, 471 280 M 444 267 L 445 261" />
+            <path class="line" d="M421 348 C 398 366, 382 380, 370 397 M 488 344 C 506 368, 523 380, 541 390" />
+            <path class="line thick" d="M371 397 L 355 429 M 541 390 L 556 419" />
+          </g>
+          <path class="line" d="M87 461 L 87 338 M 87 362 C 68 347, 49 345, 34 353 M 87 382 C 107 365, 126 364, 142 371" />
+          <path class="leaf small" d="M34 353 C 52 333, 75 339, 87 360 C 66 363, 48 361, 34 353Z" />
+          <path class="leaf small" d="M142 371 C 120 347, 101 354, 87 380 C 110 382, 127 379, 142 371Z" />
+          <path class="line" d="M48 451 C 58 439, 70 437, 83 444 M 525 457 C 536 444, 549 443, 563 451" />
+        </svg>
+        <div class="job-card-float"><img src="assets/kaamsetu-job-card.png" alt="Job requirement card for 10 workers needed for tomato picking tomorrow morning" /></div>
+      </div>
+    </section>
+
+    <section class="ticker" aria-label="Platform benefits">
+      <div class="ticker-inner"><span>✳</span><span data-i18n="ticker1">Local work, local people</span><span>✳</span><span data-i18n="ticker2">Clear wages, clear days</span><span>✳</span><span data-i18n="ticker3">Call or WhatsApp</span><span>✳</span><span data-i18n="ticker4">काम मिळेल. कामगार मिळतील.</span></div>
+    </section>
+
+    <section class="how section-wrap" id="how">
+      <div class="section-intro"><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="howEyebrow">HOW IT WORKS</span></div><h2 class="steps-heading" data-i18n="stepsLabel">Steps</h2></div>
+      <div class="steps">
+        <article class="step"><div class="step-num">01</div><div class="step-icon">◉</div><h3 data-i18n="step1Title">1. Choose your side</h3><p data-i18n="step1Text">Farmer or worker? Pick your path and fill in your simple profile.</p></article>
+        <article class="step step-offset"><div class="step-num">02</div><div class="step-icon">✎</div><h3 data-i18n="step2Title">2. Post your need</h3><p data-i18n="step2Text">Farmers post work. Workers post skills, availability and expected wage.</p></article>
+        <article class="step"><div class="step-num">03</div><div class="step-icon">⌁</div><h3 data-i18n="step3Title">3. Explore nearby</h3><p data-i18n="step3Text">Browse jobs or workers by work type, location, date and wage.</p></article>
+        <article class="step"><div class="step-num">04</div><div class="step-icon">↔</div><h3 data-i18n="step4Title">4. Match and bid</h3><p data-i18n="step4Text">KaamSetu matches skills and location. Send or receive a rate offer.</p></article>
+        <article class="step step-offset"><div class="step-num">05</div><div class="step-icon">₹</div><h3 data-i18n="step5Title">5. Accept the offer</h3><p data-i18n="step5Text">Both sides review the price. The farmer adds the service charge to the wallet.</p></article>
+        <article class="step"><div class="step-num">06</div><div class="step-icon">✓</div><h3 data-i18n="step6Title">6. Booking confirmed</h3><p data-i18n="step6Text">The booking is confirmed. Both profiles show the work and next steps.</p></article>
+      </div>
+    </section>
+
+    <section class="story-strip section-wrap" aria-label="People and work in the field">
+      <div class="story-copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span><span>PEOPLE BEHIND THE WORK</span></div>
+        <h2>काम फक्त काम नाही.<br><em>लोकांची गोष्ट आहे.</em></h2>
+        <p>Every job has a face, a place and a small team behind it. We keep that human feeling — and make the next conversation easier.</p>
+        <div class="story-meta"><span class="story-mark">✳</span><span>शेतातून थेट<br><b>तुमच्या फोनपर्यंत</b></span></div>
+      </div>
+      
+      <figure class="story-image story-image-talk"><img src="assets/kaamsetu-naka-conversation.png" alt="Farm workers discussing work together on a phone in a field" /><figcaption><span>कामाची बोलणी</span></figcaption></figure>
+    </section>
+
+    <section class="work-world section-wrap" aria-label="Work beyond agriculture">
+      <div class="work-world-copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span><span>MORE THAN ONE KIND OF WORK</span></div>
+        <h2>काम जिथे आहे,<br><em>तिथे काम जोड.</em></h2>
+        <p>From farms to loading, packing, warehouses and local businesses — the same people-first network can help work move.</p>
+        <div class="work-world-tags"><span>शेती</span><span>लोडिंग</span><span>पॅकिंग</span><span>गोदाम</span></div>
+      </div>
+      <figure class="world-image"><img src="assets/kaamsetu-work-scene.png" alt="Indian workers loading sacks and boxes at a warehouse" /><figcaption><span>शेताबाहेरचं काम</span><b>Loading · packing · warehouse</b></figcaption></figure>
+    </section>
+
+    <section class="naka-banner section-wrap" aria-label="Nearby work information">
+      <img src="assets/kaamsetu-naka-banner.png" alt="Indian workers and a farmer meeting near a labour naka with nearby work information" />
+      <div class="naka-banner-note"><span>नाका जवळ, काम जवळ</span><b>Nearby work. Nearby people.</b></div>
+    </section>
+
+    <section class="work-types section-wrap" id="work-types">
+      <div class="work-heading"><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="workEyebrow">WORK THAT MOVES WITH THE SEASON</span></div><h2 data-i18n="workTitle">From picking to<br><em>planting.</em></h2></div>
+      <div class="work-grid">
+        <button class="work-card card-red"><span class="work-emoji">🍅</span><span data-i18n="crop1">Tomato picking</span><small>टोमॅटो तोडणी</small></button>
+        <button class="work-card card-yellow"><span class="work-emoji">🌱</span><span data-i18n="crop2">Nursery work</span><small>रोपवाटिका काम</small></button>
+        <button class="work-card card-blue"><span class="work-emoji">🧺</span><span data-i18n="crop3">Grading & stacking</span><small>प्रतवारी आणि रचणी</small></button>
+        <button class="work-card card-green"><span class="work-emoji">🌾</span><span data-i18n="crop4">Weeding & planting</span><small>खुरपणी आणि लागवड</small></button>
+        <button class="work-card card-purple"><span class="work-emoji">✂</span><span data-i18n="crop5">Pruning</span><small>छाटणी</small></button>
+        <button class="work-card card-pink"><span class="work-emoji">＋</span><span data-i18n="crop6">Your work</span><small>इतर काम</small></button>
+      </div>
+    </section>
+
+
+  </main>
+
+  <section class="app-view" id="explore-view" hidden>
+    <div class="app-view-head section-wrap"><button class="back-home" data-back-home>← <span data-i18n="backHome">Back to home</span></button><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="exploreEyebrow">EXPLORE AVAILABLE WORK</span></div><h2 data-i18n="exploreTitle">Work near you.<br><em>Ready when you are.</em></h2><p data-i18n="exploreText">Browse open requirements from farmers, shops and local teams.</p></div>
+    <div class="explore-grid section-wrap" id="imported-explore-grid"></div>
+  </section>
+
+  <section class="app-view" id="profile-view" hidden>
+    <div class="profile-shell section-wrap"><button class="back-home" data-back-home>← <span data-i18n="backHome">Back to home</span></button><div class="profile-head"><div class="profile-avatar" id="profile-avatar">म</div><div><div class="eyebrow"><span class="eyebrow-dot"></span><span id="profile-role-label">YOUR PROFILE</span></div><h2 id="profile-name">Your profile</h2><p id="profile-location">Maharashtra · Available nearby</p></div><button class="green-action" data-open-explore>Explore jobs ↗</button><button class="outline-action" data-open-workers>Explore workers ↗</button></div><div class="profile-stats"><div><strong id="profile-count">0</strong><span id="profile-stat-one">Jobs posted</span></div><div><strong>Nearby</strong><span>Visibility</span></div><div><strong>Today</strong><span>Status</span></div></div><div class="profile-grid"><div class="profile-panel"><div class="panel-heading"><h3 id="profile-list-title">Your posted jobs</h3><span class="job-pill">● Live</span></div><div id="profile-jobs"></div><div id="profile-wage" class="profile-wage"></div><div id="match-panel"></div></div><div class="profile-panel profile-side"><h3>Make your profile useful</h3><p>Add skills, preferred locations and availability so the right people can find you faster.</p><div class="profile-checks"><span>✓ Phone verified</span><span>＋ Add skills</span><span>＋ Add availability</span></div></div></div></div>
+  </section>
+
+  <footer class="footer"><div class="section-wrap footer-inner"><a href="#top" class="brand"><span class="brand-mark">↗</span><span>Kaam<span class="brand-accent">Setu</span></span></a><span>काम मिळेल. कामगार मिळतील.</span><span>© 2026</span></div></footer>
+
+  <div class="modal-backdrop" id="modal" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" aria-label="Close">×</button>
+      <div class="eyebrow"><span class="eyebrow-dot"></span><span id="modal-kicker">POST A REQUIREMENT</span></div>
+      <h2 id="modal-title">Find the right workers.</h2>
+      <p id="modal-subtitle">Tell us a little about the work. We’ll keep it simple.</p>
+      <form id="lead-form">
+        <div class="form-row"><label><span data-i18n="formName">Name</span><input required name="name" data-ph="namePh" placeholder="Your name" /></label><label><span data-i18n="formPhone">Mobile number</span><input required name="phone" inputmode="tel" data-ph="phonePh" placeholder="10 digit number" /></label></div>
+        <div class="form-row"><label><span data-i18n="formTaluka">Taluka</span><input required name="taluka" data-ph="talukaPh" placeholder="e.g. Niphad" /></label><label><span data-i18n="formVillage">Village</span><input required name="village" data-ph="villagePh" placeholder="e.g. Pimpalgaon" /></label></div>
+        <fieldset data-role-field="farmer"><legend data-i18n="farmerDetails">Your work requirement</legend><div class="form-row"><label><span data-i18n="formCategory">Job category</span><select required name="category"><option value="" data-i18n="formChooseCategory">Choose category</option><option data-i18n="optFarm">Agriculture</option><option data-i18n="optNonFarm">Loading / warehouse</option><option data-i18n="optMarket">Market / local business</option><option data-i18n="optOther">Other work</option></select></label><label><span data-i18n="formJobType">Type of job</span><input required name="jobType" data-ph="jobTypePh" placeholder="e.g. Tomato picking" /></label></div><div class="form-row"><label><span data-i18n="formFarmSize">Farm size (acres)</span><input name="farmSize" type="number" min="0" step="0.1" data-ph="farmSizePh" placeholder="e.g. 2.5" /></label><label><span data-i18n="formCount">How many people?</span><input required name="count" type="number" min="1" data-ph="countPh" placeholder="e.g. 10" /></label></div><label><span data-i18n="formWorkCategory">Work group</span><select name="workCategory"><option value="" data-i18n="formChoose">Choose work type</option><option data-i18n="optFarm">Farming work</option><option data-i18n="optPacking">Packing / warehouse</option><option data-i18n="optNursery">Nursery work</option><option data-i18n="optMarket">APMC market work</option><option data-i18n="optOther">Other work</option></select></label><label><span data-i18n="formActivities">Activities needed</span><span class="check-grid"><label><input type="checkbox" name="activities" value="Tomato picking"><span data-i18n="activityTomato">Tomato picking</span></label><label><input type="checkbox" name="activities" value="Spraying"><span data-i18n="activitySpraying">Spraying</span></label><label><input type="checkbox" name="activities" value="Tractor driving"><span data-i18n="activityTractor">Tractor driving</span></label><label><input type="checkbox" name="activities" value="Nursery work"><span data-i18n="activityNursery">Nursery work</span></label><label><input type="checkbox" name="activities" value="Weeding"><span data-i18n="activityWeeding">Weeding</span></label><label><input type="checkbox" name="activities" value="Packing / warehouse"><span data-i18n="activityPacking">Packing / warehouse</span></label></span></label><div class="form-row"><label><span data-i18n="formDate">Date</span><input required name="date" type="date" /></label><label><span data-i18n="formWageOffer">Wage offered</span><input required name="wageOffer" type="number" min="1" data-ph="wageOfferPh" placeholder="e.g. 700" /></label></div><div class="form-row"><label><span data-i18n="formPay">Payment method</span><select name="payMethod"><option data-i18n="payDaily">Daily wage / per day</option><option data-i18n="payAcre">Per acre</option><option data-i18n="payTask">Fixed amount for complete work</option><option data-i18n="payHour">Per hour</option></select></label><label><span data-i18n="formContact">Phone or WhatsApp contact?</span><select name="contactPreference"><option data-i18n="yesContact">Yes, phone or WhatsApp</option><option data-i18n="callOnly">Call only</option></select></label></div></fieldset>
+        <fieldset data-role-field="worker" hidden><legend data-i18n="workerDetails">Your work profile</legend><div class="form-row"><label><span data-i18n="formPreferredWork">Work you are looking for</span><input required name="preferredWork" data-ph="preferredWorkPh" placeholder="e.g. Tomato picking" /></label><label><span data-i18n="formWageAsk">Wage you expect (₹)</span><input required name="wageAsk" type="number" min="1" data-ph="wageAskPh" placeholder="e.g. 700" /></label></div><div class="form-row"><label><span data-i18n="formWorkedDays">Days worked in last 30 days</span><input name="workedDays" type="number" min="0" max="30" data-ph="workedDaysPh" placeholder="e.g. 20" /></label><label><span data-i18n="formAvailability">Availability</span><select name="availability"><option data-i18n="availableNow">Available now</option><option data-i18n="availableWeek">Available this week</option><option data-i18n="availableLater">Available from a later date</option></select></label></div><label><span data-i18n="formSkills">Skills you can offer</span><span class="check-grid"><label><input type="checkbox" name="skills" value="Tomato picking"><span data-i18n="activityTomato">Tomato picking</span></label><label><input type="checkbox" name="skills" value="Spraying"><span data-i18n="activitySpraying">Spraying</span></label><label><input type="checkbox" name="skills" value="Tractor driving"><span data-i18n="activityTractor">Tractor driving</span></label><label><input type="checkbox" name="skills" value="Nursery work"><span data-i18n="activityNursery">Nursery work</span></label><label><input type="checkbox" name="skills" value="Weeding"><span data-i18n="activityWeeding">Weeding</span></label><label><input type="checkbox" name="skills" value="Packing / warehouse"><span data-i18n="activityPacking">Packing / warehouse</span></label></span></label><label><span data-i18n="formLastSource">How did you get your last work?</span><select name="lastWorkSource"><option data-i18n="sourceNaka">By going to the labour naka</option><option data-i18n="sourceContractor">Labour contractor</option><option data-i18n="sourceContact">Personal contacts</option><option data-i18n="sourceWhatsapp">WhatsApp group</option><option data-i18n="sourceDirect">Farmer contacted directly</option></select></label></fieldset>
+        <button class="submit-button" type="submit"><span id="submit-label" data-i18n="formSubmit">Post requirement</span><span>↗</span></button>
+      </form>
+      <div class="form-success" hidden><span class="success-check">✓</span><h3>Done! We’ve got it.</h3><p>Our local team will call you shortly. Keep your phone nearby.</p><button class="text-button modal-close-secondary">Back to home ↗</button></div>
+  </section>
+  </div>
+
+  <section class="app-view" id="workers-view" hidden>
+    <div class="app-view-head section-wrap"><button class="back-home" data-back-home>← <span data-i18n="backHome">Back to home</span></button><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="workersEyebrow">EXPLORE WORKERS</span></div><h2 data-i18n="workersTitle">People ready<br><em>to work nearby.</em></h2><p data-i18n="workersText">See skills, location, availability and expected wage. Contact details stay private.</p></div>
+    <div class="explore-grid section-wrap" id="imported-workers-grid"></div>
+  </section>
+  <div class="modal-backdrop" id="offer-modal" aria-hidden="true"><section class="modal offer-modal" role="dialog" aria-modal="true"><button class="modal-close offer-close" aria-label="Close">×</button><div class="eyebrow"><span class="eyebrow-dot"></span><span>SMART MATCH</span></div><h2 id="offer-title">Send your offer.</h2><p id="offer-subtitle">The farmer will see your skill, location and price.</p><form id="offer-form"><label><span>Your offered daily rate (₹)</span><input required type="number" name="offer" min="1" value="600" /></label><button class="submit-button" type="submit"><span>Send offer</span><span>↗</span></button></form></section></div>
+  <script src="imported-data.js"></script>
+  <script src="data-bridge.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

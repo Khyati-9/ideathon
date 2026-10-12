@@ -4,7 +4,7 @@ from decimal import Decimal, InvalidOperation
 from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.db import transaction
 
-from .models import FarmerProfile, JobRequirement, LabourProfile, Skill, User
+from .models import FarmerProfile, JobRequirement, LabourProfile, Offer, Skill, User
 
 from django.conf import settings
 from django.db.models import Count, Q
@@ -381,5 +381,238 @@ def job_matches(request, job_id):
                 "worked_days": p.worked_days,
             }
             for p in labour[offset:offset + limit]
+        ],
+    })
+
+
+@require_GET
+def demo_labour(request):
+    """Demo only: lists dummy labour so the frontend can 'log in' as one.
+    GET /api/demo/labour/?q=niphad&type=team&limit=20"""
+    if not settings.DEMO_MODE:
+        raise Http404
+
+    q = request.GET.get("q", "").strip()
+    limit = _int(request.GET.get("limit"), 200) or 20
+
+    labour = (
+        LabourProfile.objects.filter(user__username__startswith="dummy_")
+        .select_related("user")
+        .annotate(
+            pending_offers=Count(
+                "offers", filter=Q(offers__status=Offer.Status.PENDING), distinct=True
+            )
+        )
+        .order_by("-pending_offers", "id")
+    )
+    profile_type = request.GET.get("type", "")
+    if profile_type in LabourProfile.Type.values:
+        labour = labour.filter(type=profile_type)
+    if q:
+        labour = labour.filter(
+            Q(user__first_name__icontains=q)
+            | Q(user__phone__icontains=q)
+            | Q(team_name__icontains=q)
+            | Q(taluka__icontains=q)
+            | Q(village__icontains=q)
+        )
+
+    return JsonResponse({"labour": [
+        {
+            "labour_id": p.id,
+            "name": p.team_name or p.user.first_name or p.user.phone,
+            "type": p.type,
+            "team_size": p.team_size,
+            "phone": p.user.phone,
+            "village": p.village,
+            "taluka": p.taluka,
+            "pending_offers": p.pending_offers,
+        }
+        for p in labour[:limit]
+    ]})
+
+
+@require_GET
+def labour_profile(request):
+    """Labourer's profile: his details and the offers sent to him.
+    GET /api/labour/profile/?phone=1234567890"""
+    phone = _phone(request.GET.get("phone"))
+    if not phone:
+        return _phone_error()
+
+    try:
+        p = (
+            LabourProfile.objects.select_related("user")
+            .prefetch_related("skills")
+            .get(user__phone=phone)
+        )
+    except LabourProfile.DoesNotExist:
+        return JsonResponse(
+            {"error": "No labour profile found for this number"}, status=404
+        )
+
+    offers = (
+        Offer.objects.filter(labour=p)
+        .select_related("job", "job__farmer", "job__farmer__user")
+        .order_by(
+            Case(
+                When(status=Offer.Status.PENDING, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            ),
+            "-created_at",
+        )
+    )
+
+    offer_list = []
+    for o in offers:
+        farmer_user = o.job.farmer.user
+        item = {
+            "offer_id": o.id,
+            "status": o.status,
+            "wage": o.wage,
+            "headcount": o.headcount,
+            "message": o.message,
+            "created_at": o.created_at,
+            "responded_at": o.responded_at,
+            "job": {
+                "job_id": o.job.id,
+                "job_type": o.job.job_type,
+                "work_date": o.job.work_date,
+                "village": o.job.village,
+                "taluka": o.job.taluka,
+                "workers_needed": o.job.workers_needed,
+                "wage_offered": o.job.wage_offered,
+            },
+            "farmer": {
+                "name": farmer_user.first_name,
+                "village": o.job.farmer.village,
+                "taluka": o.job.farmer.taluka,
+            },
+        }
+        # farmer's number is shared only once the offer is accepted
+        if o.status == Offer.Status.ACCEPTED:
+            item["farmer"]["phone"] = farmer_user.phone
+            item["farmer"]["alternate_phone"] = farmer_user.alternate_phone
+        offer_list.append(item)
+
+    return JsonResponse({
+        "labour": {
+            "labour_id": p.id,
+            "name": p.team_name or p.user.first_name or p.user.phone,
+            "type": p.type,
+            "team_name": p.team_name,
+            "team_size": p.team_size,
+            "phone": p.user.phone,
+            "alternate_phone": p.user.alternate_phone,
+            "district": p.district,
+            "taluka": p.taluka,
+            "village": p.village,
+            "skills": [s.name_en for s in p.skills.all()],
+            "preferred_work": p.preferred_work,
+            "expected_wage": p.expected_wage,
+            "availability": p.availability,
+            "available_from": p.available_from,
+            "available_to": p.available_to,
+            "is_available": p.is_available,
+            "travel_km": p.travel_km,
+            "worked_days": p.worked_days,
+        },
+        "pending_offers": sum(1 for o in offer_list if o["status"] == "pending"),
+        "offers": offer_list,
+    })
+
+
+@require_GET
+def labour_jobs(request, labour_id):
+    """Open upcoming jobs that match this labourer's skills, with filters.
+    GET /api/labour/<labour_id>/jobs/
+        ?taluka=Niphad &date_from=2026-10-20 &date_to=2026-10-30
+        &min_wage=600 &limit=20 &offset=0"""
+    try:
+        p = LabourProfile.objects.prefetch_related("skills").get(id=labour_id)
+    except LabourProfile.DoesNotExist:
+        return JsonResponse({"error": "Labour profile not found"}, status=404)
+
+    skill_ids = [s.id for s in p.skills.all()]
+    today = date.today()
+
+    jobs = (
+        JobRequirement.objects.filter(status=JobRequirement.Status.OPEN)
+        .filter(Q(work_date__gte=today) | Q(work_date__isnull=True))
+        .select_related("farmer", "farmer__user")
+        .prefetch_related("skills")
+    )
+
+    if skill_ids:
+        jobs = jobs.annotate(
+            skill_match=Count("skills", filter=Q(skills__id__in=skill_ids), distinct=True)
+        ).filter(skill_match__gt=0)
+    elif p.preferred_work:
+        # no linked skills: fall back to the work they typed
+        jobs = jobs.filter(job_type__icontains=p.preferred_work).annotate(
+            skill_match=Value(0, output_field=IntegerField())
+        )
+    else:
+        jobs = jobs.none()
+
+    # filters from the screen
+    taluka = request.GET.get("taluka", "").strip()
+    if taluka:
+        jobs = jobs.filter(taluka__iexact=taluka)
+
+    date_from = _date(request.GET.get("date_from"))
+    if date_from:
+        jobs = jobs.filter(work_date__gte=date_from)
+    date_to = _date(request.GET.get("date_to"))
+    if date_to:
+        jobs = jobs.filter(work_date__lte=date_to)
+
+    min_wage = _decimal(request.GET.get("min_wage"), 1_000_000)
+    if min_wage is not None:
+        jobs = jobs.filter(wage_offered__gte=min_wage)
+
+    # nearness to the labourer: same village 2, same taluka 1
+    whens = []
+    if p.village:
+        whens.append(When(village__iexact=p.village, then=Value(2)))
+    if p.taluka:
+        whens.append(When(taluka__iexact=p.taluka, then=Value(1)))
+    jobs = jobs.annotate(
+        nearness=Case(*whens, default=Value(0), output_field=IntegerField())
+    ).order_by("-skill_match", "-nearness", "work_date", "-wage_offered", "id")
+
+    total = jobs.count()
+    limit = _int(request.GET.get("limit"), 200) or 20
+    offset = _int(request.GET.get("offset"), 1_000_000) or 0
+    page = list(jobs[offset:offset + limit])
+
+    offer_status = dict(
+        Offer.objects.filter(labour=p, job_id__in=[j.id for j in page])
+        .values_list("job_id", "status")
+    )
+
+    return JsonResponse({
+        "labour_id": p.id,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "jobs": [
+            {
+                "job_id": j.id,
+                "job_type": j.job_type,
+                "category": j.category,
+                "skills": [s.name_en for s in j.skills.all()],
+                "matched_skills": j.skill_match,
+                "work_date": j.work_date,
+                "workers_needed": j.workers_needed,
+                "wage_offered": j.wage_offered,
+                "payment_method": j.payment_method,
+                "village": j.village,
+                "taluka": j.taluka,
+                "farmer_name": j.farmer.user.first_name,
+                "offer_status": offer_status.get(j.id, "none"),
+            }
+            for j in page
         ],
     })

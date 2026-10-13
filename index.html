@@ -99,6 +99,32 @@
       <div class="ticker-inner"><span>✳</span><span data-i18n="ticker1">Local work, local people</span><span>✳</span><span data-i18n="ticker2">Clear wages, clear days</span><span>✳</span><span data-i18n="ticker3">Call or WhatsApp</span><span>✳</span><span data-i18n="ticker4">काम मिळेल. कामगार मिळतील.</span></div>
     </section>
 
+    <section class="trending section-wrap" aria-labelledby="trending-title">
+      <div class="trending-heading">
+        <div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="trendingEyebrow">TRENDING JOBS NEAR YOU</span></div>
+        <h2 id="trending-title" data-i18n="trendingTitle">Trending work near you.</h2>
+        <p data-i18n="trendingText">Tap a work type to see related jobs.</p>
+      </div>
+      <div class="trending-carousel" aria-label="Trending jobs carousel">
+        <div class="trending-viewport">
+          <div class="trending-jobs">
+            <button class="trending-job" type="button" data-trending-job="onion">
+              <img class="trending-image" src="assets/trending-onion-planting.png" alt="Workers planting onions in a field" /><span class="trending-copy"><strong data-i18n="onionPlanting">Onion planting</strong><small data-i18n="trendingTap">See nearby jobs ↗</small></span>
+            </button>
+            <button class="trending-job" type="button" data-trending-job="tomato">
+              <img class="trending-image" src="assets/trending-tomato-harvesting.png" alt="Workers harvesting tomatoes in a field" /><span class="trending-copy"><strong data-i18n="tomatoHarvesting">Tomato harvesting</strong><small data-i18n="trendingTap">See nearby jobs ↗</small></span>
+            </button>
+            <button class="trending-job" type="button" data-trending-job="onion" aria-hidden="true" tabindex="-1">
+              <img class="trending-image" src="assets/trending-onion-planting.png" alt="" /><span class="trending-copy"><strong data-i18n="onionPlanting">Onion planting</strong><small data-i18n="trendingTap">See nearby jobs ↗</small></span>
+            </button>
+            <button class="trending-job" type="button" data-trending-job="tomato" aria-hidden="true" tabindex="-1">
+              <img class="trending-image" src="assets/trending-tomato-harvesting.png" alt="" /><span class="trending-copy"><strong data-i18n="tomatoHarvesting">Tomato harvesting</strong><small data-i18n="trendingTap">See nearby jobs ↗</small></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="how section-wrap" id="how">
       <div class="section-intro"><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="howEyebrow">HOW IT WORKS</span></div><h2 class="steps-heading" data-i18n="stepsLabel">Steps</h2></div>
       <div class="steps">
@@ -175,6 +201,7 @@
         <button class="submit-button" type="submit"><span id="submit-label" data-i18n="formSubmit">Post requirement</span><span>↗</span></button>
       </form>
       <div class="form-success" hidden><span class="success-check">✓</span><h3>Done! We’ve got it.</h3><p>Our local team will call you shortly. Keep your phone nearby.</p><button class="text-button modal-close-secondary">Back to home ↗</button></div>
+      <div id="otp-login" class="otp-login" hidden><div class="eyebrow"><span class="eyebrow-dot"></span><span>SECURE YOUR PROFILE</span></div><h3>Login to save your profile.</h3><p>We’ll send a one-time password to your mobile number.</p><label>Phone number<input id="otp-phone" type="tel" inputmode="tel" maxlength="10" readonly /></label><button id="send-otp" class="submit-button" type="button"><span>Send OTP</span><span>↗</span></button><label id="otp-field" hidden>Enter OTP<input id="otp-code" type="text" inputmode="numeric" maxlength="6" placeholder="6 digit OTP" /></label><small id="otp-error" class="form-error" role="alert" hidden></small><button id="verify-otp" class="submit-button" type="button" hidden><span>Verify and save profile</span><span>✓</span></button></div>
   </section>
   </div>
 

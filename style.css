@@ -153,6 +153,83 @@ body.page-loaded::after{content:'';position:fixed;inset:0;z-index:100;background
 
 @media(prefers-reduced-motion:reduce){.ticker-inner{animation:none;}}
 
+/* Mobile-first guardrails for every surface. */
+html,body{max-width:100%;overflow-x:hidden;}
+img,svg{max-width:100%;}
+
+@media (max-width:900px){
+  .section-wrap{width:100%;padding-left:20px;padding-right:20px;}
+  .topbar{width:100%;height:72px;padding:12px 20px;gap:12px;}
+  .brand{flex-shrink:0;}
+  .top-actions{margin-left:auto;gap:8px;}
+  .hero{width:100%;min-height:auto;display:flex;flex-direction:column;padding:26px 20px 44px;gap:24px;text-align:center;}
+  .hero-art{order:1;width:min(680px,100%);height:min(62vw,470px);min-height:300px;margin:0 auto;}
+  .hero-copy{order:2;width:100%;display:flex;flex-direction:column;align-items:center;}
+  .hero h1{font-size:clamp(42px,9vw,72px);line-height:.98;letter-spacing:-3px;margin:0 0 18px;max-width:650px;}
+  .hero-text{width:min(560px,100%);max-width:none;margin:0 auto 22px;font-size:15px;line-height:1.55;text-align:center;}
+  .hero-ctas{width:min(620px,100%);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:4px auto 0;}
+  .hero-ctas .big-cta,.hero-ctas .cta-green{transform:none;min-width:0;width:100%;min-height:76px;padding:15px 14px;}
+  .hero-ctas .big-cta strong{font-size:15px;}
+  .hero-explore{margin:14px auto 0;}
+  .ticker-inner{width:max-content;min-width:max-content;padding:0 20px;gap:22px;}
+  .how,.work-types,.story-strip,.work-world{width:100%;}
+  .explore-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .profile-grid{grid-template-columns:1fr;}
+  .profile-side{order:2;}
+  .modal-backdrop{padding:12px;align-items:flex-start;overflow-y:auto;}
+  .modal{width:min(620px,100%);max-height:calc(100dvh - 24px);margin:0 auto;border-radius:20px;padding:24px 18px;overflow-y:auto;}
+  .modal h2{font-size:clamp(28px,7vw,38px);line-height:1.05;padding-right:28px;}
+  .modal .form-row{grid-template-columns:1fr;gap:16px;}
+  .modal input,.modal select{font-size:16px;min-height:50px;}
+  .check-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .submit-button{min-height:58px;}
+}
+
+@media (max-width:600px){
+  .topbar{height:64px;padding:10px 16px;}
+  .brand{font-size:19px;gap:6px;}
+  .brand-mark{width:27px;height:27px;font-size:18px;}
+  .lang-switcher{gap:0;}
+  .lang{padding:5px 6px;font-size:9px;}
+  .hero{padding:20px 16px 36px;gap:18px;}
+  .hero-art{height:clamp(270px,78vw,360px);min-height:270px;border-radius:44% 56% 45% 55%/44% 42% 58% 56%;}
+  .hero-generated{width:104%;left:-2%;height:94%;}
+  .chat-doodles{font-size:10px;padding:6px 8px;}
+  .chat-one{right:12px;top:76px;}
+  .chat-two{left:16px;bottom:78px;}
+  .job-card-float{right:-12px;bottom:15px;width:154px;}
+  .hero h1{font-size:clamp(38px,12vw,56px);letter-spacing:-2.5px;}
+  .hero-text{font-size:14px;}
+  .hero-ctas{grid-template-columns:1fr;gap:12px;max-width:360px;}
+  .hero-ctas .big-cta{min-height:70px;justify-content:flex-start;}
+  .hero-explore{font-size:11px;}
+  .explore-grid{grid-template-columns:1fr;gap:14px;}
+  .explore-card{padding:18px;}
+  .profile-head{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:20px;}
+  .profile-head .green-action,.profile-head .outline-action{grid-column:1/-1;width:100%;}
+  .profile-head h2{font-size:29px;}
+  .profile-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+  .profile-stats>div{padding:11px 7px;}
+  .profile-stats strong{font-size:17px;}
+  .profile-stats span{font-size:9px;}
+  .posted-job{flex-direction:column;gap:13px;}
+  .posted-job>strong{white-space:normal;}
+  .posted-job .outline-action{width:100%;}
+  .match-card{flex-direction:column;align-items:stretch;}
+  .match-actions{justify-content:stretch;}
+  .match-actions button{flex:1;}
+  .how{padding-top:54px;padding-bottom:64px;}
+  .work-types{padding-top:58px;padding-bottom:70px;}
+  .work-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .work-card{min-height:112px;padding:13px;}
+  .trust-card{padding:30px 22px;}
+  .modal-backdrop{padding:8px 8px 18px;}
+  .modal{max-height:calc(100dvh - 26px);padding:22px 15px;border-radius:18px;}
+  .modal .check-grid{grid-template-columns:1fr;}
+  .modal label{font-size:12px;}
+  .footer-inner{padding-left:16px;padding-right:16px;}
+}
+
 /* Cleaner form rhythm and more comfortable touch targets. */
 .modal form{gap:22px;}
 .modal fieldset{margin:0 0 4px;padding:0;}

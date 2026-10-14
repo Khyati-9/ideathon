@@ -67,6 +67,19 @@ body.page-loaded::after{content:'';position:fixed;inset:0;z-index:100;background
 @media (max-width:900px){
   .topbar{padding:14px 20px;position:relative}.nav-links{display:none}.topbar.mobile-nav-open .nav-links{display:flex;position:absolute;z-index:30;top:calc(100% - 4px);left:14px;right:14px;padding:14px;flex-direction:column;gap:0;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px #10251d22}.topbar.mobile-nav-open .nav-links a{padding:12px 8px;border-bottom:1px solid var(--line)}.topbar.mobile-nav-open .nav-links a:last-child{border-bottom:0}.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px;text-align:center}.hero-copy{align-items:center}.hero-copy h1{font-size:clamp(48px,9vw,82px)}.hero-text{max-width:560px}.hero-ctas{justify-content:center}.hero-art{max-width:600px;margin:14px auto 0}.story-strip,.work-world{grid-template-columns:1fr;gap:28px}.story-copy,.work-world-copy{max-width:620px}.profile-grid{grid-template-columns:1fr}.profile-side{order:2}
 }
+
+/* Required fields are marked with a clear red asterisk. */
+.modal label:has(> input:required) > span:first-child::after,
+.modal label:has(> select:required) > span:first-child::after,
+.modal label:has(input:required) > span:first-child::after,
+.modal label:has(select:required) > span:first-child::after {
+  content: ' *';
+  color: #df4f45;
+  font-weight: 900;
+}
+
+.brand-mark{transform:none;overflow:hidden;}
+.brand-mark svg{width:22px;height:18px;display:block;fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
 @media (max-width:580px){
   .topbar{padding:11px 14px;gap:8px}.brand{font-size:18px}.top-actions{gap:6px}.profile-link{padding:7px 9px;font-size:10px}.lang-switcher{gap:2px;padding:3px}.lang{padding:5px 6px;font-size:9px}
   .hero{padding:30px 16px 22px}.hero-copy h1{font-size:clamp(40px,12vw,62px);line-height:.96}.hero-text{font-size:15px;line-height:1.55}.hero-ctas{display:grid;grid-template-columns:1fr;gap:13px;width:100%;max-width:360px}.big-cta{min-height:82px;padding:18px}.hero-art{margin-top:8px}.hero-generated{max-height:330px}.ticker-inner{gap:18px;font-size:10px;white-space:nowrap}.section-wrap{padding-left:16px;padding-right:16px}.app-view{padding-top:22px}.app-view-head h2{font-size:clamp(38px,11vw,54px);line-height:.98}.app-view-head p{font-size:14px}.explore-grid{grid-template-columns:1fr;gap:13px}.explore-card{padding:17px}.job-owner{margin-top:13px}.profile-head{display:grid;grid-template-columns:auto 1fr;gap:10px}.profile-head .green-action,.profile-head .outline-action{grid-column:1/-1;width:100%}.profile-head h2{font-size:29px}.profile-stats{grid-template-columns:repeat(3,1fr);gap:7px}.profile-stats div{padding:12px 6px}.profile-stats strong{font-size:18px}.profile-stats span{font-size:9px}.profile-panel{padding:16px}.modal{width:calc(100% - 18px);max-height:calc(100dvh - 18px);padding:22px 16px;border-radius:20px}.modal h2{font-size:29px;line-height:1}.form-row{grid-template-columns:1fr;gap:0}.form-row label{min-width:0}.check-grid{grid-template-columns:1fr 1fr}.submit-button{min-height:58px}.footer-inner{flex-wrap:wrap;gap:10px;font-size:10px}

@@ -45,7 +45,31 @@ const menuButton=document.querySelector('.menu-button'); const topbar=document.q
 
 const modal = document.querySelector('#modal');
 let currentRole = 'farmer';
-const refreshModal = lang => { const worker = currentRole==='worker'; const c=copy[lang]||copy.en; document.querySelectorAll('[data-role-field]').forEach(field=>{const active=field.dataset.roleField===currentRole;field.hidden=!active;field.querySelectorAll('input,select').forEach(input=>input.disabled=!active);}); document.querySelector('#modal-kicker').textContent=worker ? (lang==='mr'?'तुमचं पुढचं काम शोधा':lang==='hi'?'अपना अगला काम खोजें':'FIND YOUR NEXT WORK') : (lang==='mr'?'कामाची गरज पोस्ट करा':lang==='hi'?'काम की ज़रूरत पोस्ट करें':'POST A REQUIREMENT'); document.querySelector('#modal-title').textContent=worker ? (lang==='mr'?'योग्य काम शोधा.':lang==='hi'?'सही काम खोजें.':'Find the right work.') : (lang==='mr'?'योग्य कामगार शोधा.':lang==='hi'?'सही मज़दूर खोजें.':'Find the right workers.'); document.querySelector('#modal-subtitle').textContent=worker ? (lang==='mr'?'तुम्ही काय करू शकता आणि कुठे आहात ते सांगा.':lang==='hi'?'आप क्या कर सकते हैं और कहाँ हैं बताएं.':'Tell us what you can do and where you are.') : (lang==='mr'?'कामाबद्दल थोडी माहिती द्या.':lang==='hi'?'काम के बारे में थोड़ी जानकारी दें.':'Tell us a little about the work.'); document.querySelector('#submit-label').textContent=worker ? (lang==='mr'?'माझ्यासाठी काम शोधा':lang==='hi'?'मेरे लिए काम खोजें':'Find work for me') : c.formSubmit; };
+const refreshModal = lang => {
+  const worker = currentRole === 'worker';
+  const c = copy[lang] || copy.en;
+  document.querySelectorAll('[data-role-field]').forEach(field => {
+    const active = field.dataset.roleField === currentRole;
+    field.hidden = !active;
+    field.querySelectorAll('input,select').forEach(input => { input.disabled = !active; });
+  });
+  const kicker = document.querySelector('#modal-kicker');
+  const title = document.querySelector('#modal-title');
+  const subtitle = document.querySelector('#modal-subtitle');
+  const submit = document.querySelector('#submit-label');
+  if (kicker) kicker.textContent = worker
+    ? (lang === 'mr' ? 'तुमचं पुढचं काम शोधा' : lang === 'hi' ? 'अपना अगला काम खोजें' : 'FIND YOUR NEXT WORK')
+    : (lang === 'mr' ? 'कामाची गरज पोस्ट करा' : lang === 'hi' ? 'काम की ज़रूरत पोस्ट करें' : 'POST A REQUIREMENT');
+  if (title) title.textContent = worker
+    ? (lang === 'mr' ? 'योग्य काम शोधा.' : lang === 'hi' ? 'सही काम खोजें.' : 'Find the right work.')
+    : (lang === 'mr' ? 'योग्य कामगार शोधा.' : lang === 'hi' ? 'सही मज़दूर खोजें.' : 'Find the right workers.');
+  if (subtitle) subtitle.textContent = worker
+    ? (lang === 'mr' ? 'तुम्ही काय करू शकता आणि कुठे आहात ते सांगा.' : lang === 'hi' ? 'आप क्या कर सकते हैं और कहाँ हैं बताएं.' : 'Tell us what you can do and where you are.')
+    : (lang === 'mr' ? 'कामाबद्दल थोडी माहिती द्या.' : lang === 'hi' ? 'काम के बारे में थोड़ी जानकारी दें.' : 'Tell us a little about the work.');
+  if (submit) submit.textContent = worker
+    ? (lang === 'mr' ? 'माझ्यासाठी काम शोधा' : lang === 'hi' ? 'मेरे लिए काम खोजें' : 'Find work for me')
+    : c.formSubmit;
+};
 const syncTeamFields = () => { const isTeam=document.querySelector('#worker-type')?.value==='team'; document.querySelectorAll('[data-team-field]').forEach(field=>{field.hidden=!isTeam;field.querySelectorAll('input').forEach(input=>{input.disabled=!isTeam;});}); };
 document.querySelector('#worker-type')?.addEventListener('change',syncTeamFields);
 const openModal = role => { currentRole=role; document.querySelector('#lead-form').hidden=false; modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; refreshModal(document.documentElement.lang==='mr'?'mr':document.documentElement.lang==='hi'?'hi':'en'); syncTeamFields(); syncRequiredFields(); setTimeout(()=>modal.querySelector('input')?.focus(),50); };

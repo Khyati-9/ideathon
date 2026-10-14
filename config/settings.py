@@ -151,3 +151,7 @@ MAILERS = {
 
 
 OTP_BASE_URL = os.environ.get("OTP_BASE_URL", "https://demand.bharatintelligence.ai")
+
+OTP_API_TOKEN = os.environ.get("OTP_API_TOKEN", "")
+OTP_AUTH_HEADER = os.environ.get("OTP_AUTH_HEADER", "Authorization")
+OTP_AUTH_SCHEME = os.environ.get("OTP_AUTH_SCHEME", "Bearer")

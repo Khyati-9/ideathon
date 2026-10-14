@@ -117,44 +117,42 @@ const setupWorkerDateField = () => {
 };
 setupFarmerActivities(); setupWorkerSkills(); setupWorkerDateField(); setLanguage(localStorage.getItem('work-language') || 'en');
 
-// Keep only the essential questions required, and change them with the selected role.
+// Every visible field for the selected role is required, except the fields the
+// product intentionally keeps optional. Checkbox groups are handled as one
+// required group so users only need to choose one activity/skill.
 const syncRequiredFields = () => {
   const form = document.querySelector('#lead-form');
   if (!form) return;
   const activeFieldset = form.querySelector(`[data-role-field="${currentRole}"]`);
   form.querySelectorAll('label[data-required-label]').forEach(label => delete label.dataset.requiredLabel);
-  const setRequired = (name, required) => {
-    const field = activeFieldset?.querySelector(`[name="${name}"]`) || form.querySelector(`[name="${name}"]`);
-    if (field) {
-      field.required = required;
-      if (required) field.closest('label')?.setAttribute('data-required-label', 'true');
-    }
-  };
-  ['category', 'count', 'date', 'wageOffer', 'wageAsk', 'workedDays', 'availability'].forEach(name => setRequired(name, false));
-  form.querySelectorAll('input[name="activities"],input[name="skills"],input[name="otherJobType"],input[name="otherSkill"]').forEach(field => { field.required = false; });
+  form.querySelectorAll('input, select, textarea').forEach(field => { field.required = false; });
 
-  if (currentRole === 'farmer') {
-    ['category', 'count', 'date', 'wageOffer'].forEach(name => setRequired(name, true));
-    const activities = [...form.querySelectorAll('[data-role-field="farmer"] input[name="activities"]')];
-    const hasActivity = activities.some(field => field.checked);
-    if (activities[0]) activities[0].required = !hasActivity;
-    activities[0]?.closest('.check-grid')?.closest('label')?.setAttribute('data-required-label', 'true');
-    const other = form.querySelector('[data-role-field="farmer"] input[name="otherJobType"]');
-    if (other) {
-      other.required = !!form.querySelector('[data-role-field="farmer"] input[name="activities"][value="other"]:checked');
-      if (other.required) other.closest('label')?.setAttribute('data-required-label', 'true');
-    }
-  } else {
-    ['wageAsk', 'workedDays', 'date', 'availability'].forEach(name => setRequired(name, true));
-    const skills = [...form.querySelectorAll('[data-role-field="worker"] input[name="skills"]')];
-    const hasSkill = skills.some(field => field.checked);
-    if (skills[0]) skills[0].required = !hasSkill;
-    skills[0]?.closest('.check-grid')?.closest('label')?.setAttribute('data-required-label', 'true');
-    const other = form.querySelector('[data-role-field="worker"] input[name="otherSkill"]');
-    if (other) {
-      other.required = !!form.querySelector('[data-role-field="worker"] input[name="skills"][value="other"]:checked');
-      if (other.required) other.closest('label')?.setAttribute('data-required-label', 'true');
-    }
+  const optionalNames = new Set(['farmSize', 'count', 'otherJobType', 'otherSkill', 'contactPreference']);
+  const requiredField = field => {
+    field.required = true;
+    field.closest('label')?.setAttribute('data-required-label', 'true');
+  };
+
+  // Shared identity/location fields are always required.
+  form.querySelectorAll('input[name="name"], input[name="phone"], input[name="taluka"], input[name="village"]').forEach(requiredField);
+
+  if (!activeFieldset) return;
+
+  // Require all visible scalar fields in the active form. Hidden conditional
+  // team fields are included only when the user selects the team option.
+  activeFieldset.querySelectorAll('input:not([type="checkbox"]):not([type="hidden"]), select, textarea').forEach(field => {
+    const isVisible = !field.closest('[hidden]');
+    if (isVisible && !optionalNames.has(field.name)) requiredField(field);
+  });
+
+  // A user must select at least one activity/skill, but the browser should
+  // treat the checkbox list as one group rather than requiring every box.
+  const groupName = currentRole === 'farmer' ? 'activities' : 'skills';
+  const group = [...activeFieldset.querySelectorAll(`input[name="${groupName}"]`)];
+  const hasSelection = group.some(field => field.checked);
+  if (group[0]) {
+    group[0].required = !hasSelection;
+    group[0].closest('.check-grid')?.closest('label')?.setAttribute('data-required-label', 'true');
   }
 };
 

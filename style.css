@@ -78,6 +78,21 @@ body.page-loaded::after{content:'';position:fixed;inset:0;z-index:100;background
   font-weight: 900;
 }
 
+.modal label[data-required-label] > span:first-child::after {
+  content: ' *';
+  color: #df4f45;
+  font-weight: 900;
+}
+
+.big-cta,
+.submit-button,
+.green-action,
+.outline-action,
+.hero-explore {
+  justify-content: center;
+  text-align: center;
+}
+
 .brand-mark{transform:none;overflow:hidden;}
 .brand-mark svg{width:22px;height:18px;display:block;fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
 @media (max-width:580px){

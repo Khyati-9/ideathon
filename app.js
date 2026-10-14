@@ -128,9 +128,13 @@ const syncRequiredFields = () => {
   const form = document.querySelector('#lead-form');
   if (!form) return;
   const activeFieldset = form.querySelector(`[data-role-field="${currentRole}"]`);
+  form.querySelectorAll('label[data-required-label]').forEach(label => delete label.dataset.requiredLabel);
   const setRequired = (name, required) => {
     const field = activeFieldset?.querySelector(`[name="${name}"]`) || form.querySelector(`[name="${name}"]`);
-    if (field) field.required = required;
+    if (field) {
+      field.required = required;
+      if (required) field.closest('label')?.setAttribute('data-required-label', 'true');
+    }
   };
   ['category', 'count', 'date', 'wageOffer', 'wageAsk', 'workedDays', 'availability'].forEach(name => setRequired(name, false));
   form.querySelectorAll('input[name="activities"],input[name="skills"],input[name="otherJobType"],input[name="otherSkill"]').forEach(field => { field.required = false; });
@@ -140,15 +144,23 @@ const syncRequiredFields = () => {
     const activities = [...form.querySelectorAll('[data-role-field="farmer"] input[name="activities"]')];
     const hasActivity = activities.some(field => field.checked);
     if (activities[0]) activities[0].required = !hasActivity;
+    activities[0]?.closest('.check-grid')?.closest('label')?.setAttribute('data-required-label', 'true');
     const other = form.querySelector('[data-role-field="farmer"] input[name="otherJobType"]');
-    if (other) other.required = !!form.querySelector('[data-role-field="farmer"] input[name="activities"][value="other"]:checked');
+    if (other) {
+      other.required = !!form.querySelector('[data-role-field="farmer"] input[name="activities"][value="other"]:checked');
+      if (other.required) other.closest('label')?.setAttribute('data-required-label', 'true');
+    }
   } else {
     ['wageAsk', 'workedDays', 'date', 'availability'].forEach(name => setRequired(name, true));
     const skills = [...form.querySelectorAll('[data-role-field="worker"] input[name="skills"]')];
     const hasSkill = skills.some(field => field.checked);
     if (skills[0]) skills[0].required = !hasSkill;
+    skills[0]?.closest('.check-grid')?.closest('label')?.setAttribute('data-required-label', 'true');
     const other = form.querySelector('[data-role-field="worker"] input[name="otherSkill"]');
-    if (other) other.required = !!form.querySelector('[data-role-field="worker"] input[name="skills"][value="other"]:checked');
+    if (other) {
+      other.required = !!form.querySelector('[data-role-field="worker"] input[name="skills"][value="other"]:checked');
+      if (other.required) other.closest('label')?.setAttribute('data-required-label', 'true');
+    }
   }
 };
 

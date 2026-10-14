@@ -106,7 +106,7 @@ def _phone_error():
 
 
 # ---------- OTP service (WhatsApp OTP at settings.OTP_BASE_URL) ----------
-# Used by the farmer form only. The labour form has no OTP step.
+# Currently unused: neither signup form asks for an OTP. Kept for later use.
 
 OTP_SEND_PATH = "/otp/test/api/send-otp/"
 OTP_VERIFY_PATH = "/otp/test/api/verify-otp/"
@@ -215,7 +215,7 @@ def _check_otp(data, phone):
     return JsonResponse({"error": "Could not verify OTP"}, status=502)
 
 
-# ---------- farmer form (OTP required) ----------
+# ---------- farmer form (no OTP) ----------
 
 @csrf_exempt
 @require_POST
@@ -228,9 +228,8 @@ def farmer_signup(request):
     if not phone:
         return _phone_error()
 
-    otp_error = _check_otp(data, phone)
-    if otp_error:
-        return otp_error
+    # farmer form has no OTP step; keep any stray code out of raw_form
+    data.pop("otp", None)
 
     taluka = _text(data, "taluka")
     village = _text(data, "village")

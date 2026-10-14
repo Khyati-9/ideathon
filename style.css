@@ -68,20 +68,12 @@ body.page-loaded::after{content:'';position:fixed;inset:0;z-index:100;background
   .topbar{padding:14px 20px;position:relative}.nav-links{display:none}.topbar.mobile-nav-open .nav-links{display:flex;position:absolute;z-index:30;top:calc(100% - 4px);left:14px;right:14px;padding:14px;flex-direction:column;gap:0;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px #10251d22}.topbar.mobile-nav-open .nav-links a{padding:12px 8px;border-bottom:1px solid var(--line)}.topbar.mobile-nav-open .nav-links a:last-child{border-bottom:0}.hero{grid-template-columns:1fr;min-height:auto;padding-top:54px;text-align:center}.hero-copy{align-items:center}.hero-copy h1{font-size:clamp(48px,9vw,82px)}.hero-text{max-width:560px}.hero-ctas{justify-content:center}.hero-art{max-width:600px;margin:14px auto 0}.story-strip,.work-world{grid-template-columns:1fr;gap:28px}.story-copy,.work-world-copy{max-width:620px}.profile-grid{grid-template-columns:1fr}.profile-side{order:2}
 }
 
-/* Required fields are marked with a clear red asterisk. */
-.modal label:has(> input:required) > span:first-child::after,
-.modal label:has(> select:required) > span:first-child::after,
-.modal label:has(input:required) > span:first-child::after,
-.modal label:has(select:required) > span:first-child::after {
-  content: ' *';
+/* Required fields are marked with explicit red asterisk elements. */
+.modal .required-mark {
   color: #df4f45;
   font-weight: 900;
-}
-
-.modal label[data-required-label] > span:first-child::after {
-  content: ' *';
-  color: #df4f45;
-  font-weight: 900;
+  font-size: 1.05em;
+  margin-left: 2px;
 }
 
 .big-cta,

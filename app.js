@@ -125,12 +125,24 @@ const syncRequiredFields = () => {
   if (!form) return;
   const activeFieldset = form.querySelector(`[data-role-field="${currentRole}"]`);
   form.querySelectorAll('label[data-required-label]').forEach(label => delete label.dataset.requiredLabel);
+  form.querySelectorAll('.required-mark').forEach(mark => mark.remove());
   form.querySelectorAll('input, select, textarea').forEach(field => { field.required = false; });
 
   const optionalNames = new Set(['farmSize', 'count', 'otherJobType', 'otherSkill', 'contactPreference']);
+  const markRequiredLabel = field => {
+    const label = field.closest('label');
+    const title = label && [...label.children].find(child => child.tagName === 'SPAN');
+    if (!title || title.querySelector('.required-mark')) return;
+    const mark = document.createElement('b');
+    mark.className = 'required-mark';
+    mark.setAttribute('aria-hidden', 'true');
+    mark.textContent = ' *';
+    title.appendChild(mark);
+  };
   const requiredField = field => {
     field.required = true;
     field.closest('label')?.setAttribute('data-required-label', 'true');
+    markRequiredLabel(field);
   };
 
   // Shared identity/location fields are always required.
@@ -152,7 +164,9 @@ const syncRequiredFields = () => {
   const hasSelection = group.some(field => field.checked);
   if (group[0]) {
     group[0].required = !hasSelection;
-    group[0].closest('.check-grid')?.closest('label')?.setAttribute('data-required-label', 'true');
+    const groupLabel = group[0].closest('.check-grid')?.closest('label');
+    groupLabel?.setAttribute('data-required-label', 'true');
+    if (groupLabel) markRequiredLabel(groupLabel.querySelector('.check-grid'));
   }
 };
 

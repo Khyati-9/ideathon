@@ -94,7 +94,10 @@ document.querySelector('.offer-close').addEventListener('click',closeOffer); off
 document.querySelectorAll('[data-back-home]').forEach(btn=>btn.addEventListener('click',showHome));
 document.querySelector('.modal-close').addEventListener('click',closeModal); document.querySelector('.modal-close-secondary').addEventListener('click',closeModal); modal.addEventListener('click',e=>{if(e.target===modal)closeModal()}); document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 const LIVE_API_BASE_URL = 'https://kaamsetu.phala.work/api';
-const API_BASE_URL = window.KAAMSETU_API_BASE_URL || LIVE_API_BASE_URL;
+const isHttpPage = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+// On the deployed site, route through Netlify so the browser talks to the
+// same origin. This avoids the live backend's missing CORS preflight support.
+const API_BASE_URL = window.KAAMSETU_API_BASE_URL || (isHttpPage ? `${window.location.origin}/api` : LIVE_API_BASE_URL);
 const readFormData = form => { const data={}; for(const [key,value] of new FormData(form).entries()){ if(data[key]) data[key]=Array.isArray(data[key])?[...data[key],value]:[data[key],value]; else data[key]=value; } ['activities','skills'].forEach(key=>{if(data[key]&&!Array.isArray(data[key]))data[key]=[data[key]];}); return data; };
 const apiPayload = (data,role) => { const farmerFields=['phone','alternatePhone','name','taluka','village','district','category','jobType','workCategory','farmSize','count','date','wageOffer','payMethod','contactPreference','activities']; const workerFields=['phone','alternatePhone','name','taluka','village','district','type','teamName','teamSize','preferredWork','wageAsk','workedDays','date','travelKm','availability','availableFrom','availableTo','lastWorkSource','contactPreference','skills']; const fields=role==='worker'?workerFields:farmerFields; return Object.fromEntries(fields.filter(key=>data[key]!==undefined&&data[key]!=='').map(key=>[key,data[key]])); };
 const showPhoneError = message => { const error=document.querySelector('#phone-error'); if(error){error.textContent=message||'';error.hidden=!message;} };

@@ -68,8 +68,8 @@ const renderWorkers = () => {const grid=document.querySelector('#imported-worker
 const showExplore = (filter='') => { closeModal(); renderExplore(filter); showView('#explore-view'); window.location.hash='explore'; };
 const showWorkers = () => { closeModal(); renderWorkers(); showView('#workers-view'); window.location.hash='workers'; };
 let profileData = JSON.parse(localStorage.getItem('kaamsetu-profile')||'null'); let currentJob = jobs.tomato; let bookingState = 'farmer-review';
-const apiHeaders = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};
-const apiGet = async path => { const response=await fetch(`${API_BASE_URL.replace(/\/$/,'')}${path}`,{headers:{'ngrok-skip-browser-warning':'true'}}); let result={}; try{result=await response.json();}catch{} if(!response.ok)throw new Error(result?.error||'Could not load data.'); return result; };
+const apiHeaders = {'Content-Type':'application/json'};
+const apiGet = async path => { const response=await fetch(`${API_BASE_URL.replace(/\/$/,'')}${path}`,{headers:apiHeaders}); let result={}; try{result=await response.json();}catch{} if(!response.ok)throw new Error(result?.error||'Could not load data.'); return result; };
 const renderRemoteFarmerProfile = payload => {
   const farmer=payload.farmer||{}; const jobsFromApi=payload.jobs||[]; const location=[farmer.village,farmer.taluka,farmer.district].filter(Boolean).join(', ')||'Maharashtra';
   profileData={...profileData,...farmer,role:'farmer',apiJobs:jobsFromApi}; localStorage.setItem('kaamsetu-profile',JSON.stringify(profileData));
@@ -95,7 +95,8 @@ document.querySelector('#offer-form').addEventListener('submit',e=>{e.preventDef
 document.querySelector('.offer-close').addEventListener('click',closeOffer); offerModal.addEventListener('click',e=>{if(e.target===offerModal)closeOffer()});
 document.querySelectorAll('[data-back-home]').forEach(btn=>btn.addEventListener('click',showHome));
 document.querySelector('.modal-close').addEventListener('click',closeModal); document.querySelector('.modal-close-secondary').addEventListener('click',closeModal); modal.addEventListener('click',e=>{if(e.target===modal)closeModal()}); document.querySelector('.login-close')?.addEventListener('click',closeLoginModal); loginModal?.addEventListener('click',e=>{if(e.target===loginModal)closeLoginModal()}); document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeLoginModal();}});
-const API_BASE_URL = window.KAAMSETU_API_BASE_URL || localStorage.getItem('kaamsetu-api-base') || 'https://kaamsetu.phala.work/api';
+const LIVE_API_BASE_URL = 'https://kaamsetu.phala.work/api';
+const API_BASE_URL = window.KAAMSETU_API_BASE_URL || LIVE_API_BASE_URL;
 const readFormData = form => { const data={}; for(const [key,value] of new FormData(form).entries()){ if(data[key]) data[key]=Array.isArray(data[key])?[...data[key],value]:[data[key],value]; else data[key]=value; } ['activities','skills'].forEach(key=>{if(data[key]&&!Array.isArray(data[key]))data[key]=[data[key]];}); return data; };
 const apiPayload = (data,role) => { const farmerFields=['phone','alternatePhone','name','taluka','village','district','category','jobType','workCategory','farmSize','count','date','wageOffer','payMethod','contactPreference','activities']; const workerFields=['phone','alternatePhone','name','taluka','village','district','type','teamName','teamSize','preferredWork','wageAsk','workedDays','date','travelKm','availability','availableFrom','availableTo','lastWorkSource','contactPreference','skills']; const fields=role==='worker'?workerFields:farmerFields; return Object.fromEntries(fields.filter(key=>data[key]!==undefined&&data[key]!=='').map(key=>[key,data[key]])); };
 const showPhoneError = message => { const error=document.querySelector('#phone-error'); if(error){error.textContent=message||'';error.hidden=!message;} };

@@ -268,12 +268,6 @@ img,svg{max-width:100%;}
 .modal fieldset>label,.modal form>.form-row{margin-bottom:4px;}
 #other-job-wrap{margin-top:2px;}
 .modal .check-grid{margin-top:4px;gap:10px;}
-.otp-login{display:grid;gap:16px;padding-top:8px;}
-.otp-login h3{font:700 28px/1.1 'Noto Sans Devanagari','Space Grotesk',sans-serif;margin:0;}
-.otp-login p{margin:0;color:var(--muted);}
-.otp-login label{display:grid;gap:8px;font-size:12px;font-weight:700;color:var(--green);}
-.otp-login input{width:100%;background:#f5f3ea;border:1px solid #deddd2;border-radius:12px;padding:14px 13px;min-height:50px;font-size:16px;color:var(--ink);}
-.otp-login .submit-button{width:100%;}
 
 @media (max-width:900px){
   .hero{display:flex;flex-direction:column;}

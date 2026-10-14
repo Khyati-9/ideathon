@@ -3,7 +3,8 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.db import transaction
-
+import urllib.error
+import urllib.request
 from .models import FarmerProfile, JobRequirement, LabourProfile, Offer, Skill, User
 
 from django.conf import settings
@@ -114,6 +115,10 @@ def farmer_signup(request):
     if not phone:
         return _phone_error()
 
+    otp_error = _check_otp(data, phone)
+    if otp_error:
+        return otp_error
+
     taluka = _text(data, "taluka")
     village = _text(data, "village")
     district = _text(data, "district")
@@ -164,6 +169,10 @@ def labour_signup(request):
     phone = _phone(data.get("phone"))
     if not phone:
         return _phone_error()
+
+    otp_error = _check_otp(data, phone)
+    if otp_error:
+        return otp_error
 
     profile_type = _text(data, "type", 10)
     if profile_type not in LabourProfile.Type.values:
@@ -616,3 +625,75 @@ def labour_jobs(request, labour_id):
             for j in page
         ],
     })
+
+
+OTP_SEND_PATH = "/otp/api/send-otp/"
+OTP_VERIFY_PATH = "/otp/api/verify-otp/"
+
+def _otp_post(path, payload):
+    """POST JSON to the OTP service. Returns (status_code, body_dict).
+    status_code is None if the service could not be reached."""
+    url = settings.OTP_BASE_URL.rstrip("/") + path
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status, json.loads(resp.read().decode() or "{}")
+    except urllib.error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read().decode() or "{}")
+        except ValueError:
+            body = {}
+        return exc.code, body
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        return None, {}
+
+
+@csrf_exempt
+@require_POST
+def send_otp(request):
+    data = _body(request)
+    if data is None:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    phone = _phone(data.get("phone"))
+    if not phone:
+        return _phone_error()
+
+    # the OTP service wants international format: 91XXXXXXXXXX
+    status, body = _otp_post(OTP_SEND_PATH, {"phone_number": "91" + phone})
+    if status == 200:
+        return JsonResponse({"ok": True, "message": "OTP sent"})
+    if status is None:
+        return JsonResponse({"error": "OTP service is not reachable"}, status=502)
+    return JsonResponse(
+        {"error": body.get("error") or "Could not send OTP"}, status=502
+    )
+
+
+def _check_otp(data, phone):
+    """Returns None if the OTP is valid, otherwise the error response to return.
+    Removes 'otp' from data so the code is never saved in raw_form."""
+    code = str(data.pop("otp", "") or "").strip()[:10]
+    if not code:
+        return JsonResponse(
+            {"errors": {"otp": "Please enter the OTP sent to your WhatsApp"}},
+            status=400,
+        )
+
+    status, body = _otp_post(
+        OTP_VERIFY_PATH, {"phone_number": "91" + phone, "otp": code}
+    )
+    if status == 200 and body.get("success") is True:
+        return None
+    if status is None:
+        return JsonResponse({"error": "OTP service is not reachable"}, status=502)
+    if status == 400:
+        return JsonResponse(
+            {"errors": {"otp": body.get("error") or "Invalid OTP"}}, status=400
+        )
+    return JsonResponse({"error": "Could not verify OTP"}, status=502)

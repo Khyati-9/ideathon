@@ -148,3 +148,6 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+
+OTP_BASE_URL = os.environ.get("OTP_BASE_URL", "https://demand.bharatintelligence.ai")

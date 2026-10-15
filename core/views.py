@@ -11,7 +11,7 @@ from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.http import Http404, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
-
+from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from .models import FarmerProfile, JobRequirement, LabourProfile, Offer, Skill, User
 
 logger = logging.getLogger(__name__)
@@ -411,8 +411,100 @@ def farmer_profile(request):
 
 
 @require_GET
+def labour_jobs(request, labour_id):
+    """Open upcoming jobs that match this labourer's skills and village.
+    GET /api/labour/<labour_id>/jobs/
+        ?taluka=Niphad &date_from=2026-10-20 &date_to=2026-10-30
+        &min_wage=600 &limit=20 &offset=0"""
+    try:
+        p = LabourProfile.objects.prefetch_related("skills").get(id=labour_id)
+    except LabourProfile.DoesNotExist:
+        return JsonResponse({"error": "Labour profile not found"}, status=404)
+
+    skill_ids = [s.id for s in p.skills.all()]
+    today = date.today()
+
+    jobs = (
+        JobRequirement.objects.filter(status=JobRequirement.Status.OPEN)
+        .filter(Q(work_date__gte=today) | Q(work_date__isnull=True))
+        .select_related("farmer", "farmer__user")
+        .prefetch_related("skills")
+    )
+
+    if skill_ids:
+        jobs = jobs.annotate(
+            skill_match=Count("skills", filter=Q(skills__id__in=skill_ids), distinct=True)
+        ).filter(skill_match__gt=0)
+    elif p.preferred_work:
+        # no linked skills: fall back to the work they typed
+        jobs = jobs.filter(job_type__icontains=p.preferred_work).annotate(
+            skill_match=Value(0, output_field=IntegerField())
+        )
+    else:
+        jobs = jobs.none()
+
+    # match on village: only jobs in the labourer's village (if they have one)
+    if p.village:
+        jobs = jobs.filter(village__iexact=p.village)
+
+    # filters from the screen
+    taluka = request.GET.get("taluka", "").strip()
+    if taluka:
+        jobs = jobs.filter(taluka__iexact=taluka)
+
+    date_from = _date(request.GET.get("date_from"))
+    if date_from:
+        jobs = jobs.filter(work_date__gte=date_from)
+    date_to = _date(request.GET.get("date_to"))
+    if date_to:
+        jobs = jobs.filter(work_date__lte=date_to)
+
+    min_wage = _decimal(request.GET.get("min_wage"), 1_000_000)
+    if min_wage is not None:
+        jobs = jobs.filter(wage_offered__gte=min_wage)
+
+    jobs = jobs.order_by("-skill_match", "work_date", "id")
+
+    total = jobs.count()
+    limit = _int(request.GET.get("limit"), 200) or 20
+    offset = _int(request.GET.get("offset"), 1_000_000) or 0
+    page = list(jobs[offset:offset + limit])
+
+    offer_status = dict(
+        Offer.objects.filter(labour=p, job_id__in=[j.id for j in page])
+        .values_list("job_id", "status")
+    )
+
+    return JsonResponse({
+        "labour_id": p.id,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "jobs": [
+            {
+                "job_id": j.id,
+                "job_type": j.job_type,
+                "category": j.category,
+                "skills": [s.name_en for s in j.skills.all()],
+                "matched_skills": j.skill_match,
+                "work_date": j.work_date,
+                "workers_needed": j.workers_needed,
+                "wage_offered": j.wage_offered,
+                "payment_method": j.payment_method,
+                "village": j.village,
+                "taluka": j.taluka,
+                "farmer_name": j.farmer.user.first_name,
+                "offer_status": offer_status.get(j.id, "none"),
+            }
+            for j in page
+        ],
+    })
+
+
+@require_GET
 def job_matches(request, job_id):
-    """Labour profiles (individuals and mukkadams/teams) matching one job.
+    """Labour profiles (individuals and mukkadams/teams) matching one job's
+    skills and village.
     GET /api/farmer/jobs/<job_id>/matches/
         ?type=team|individual &taluka=Niphad &max_wage=700 &limit=20 &offset=0"""
     try:
@@ -442,6 +534,10 @@ def job_matches(request, job_id):
     else:
         labour = labour.none()
 
+    # match on village: only labour from the job's village (if the job has one)
+    if job.village:
+        labour = labour.filter(village__iexact=job.village)
+
     # optional filters from the screen
     profile_type = request.GET.get("type", "")
     if profile_type in LabourProfile.Type.values:
@@ -455,15 +551,7 @@ def job_matches(request, job_id):
     if max_wage is not None:
         labour = labour.filter(expected_wage__lte=max_wage)
 
-    # nearness to the job: same village 2, same taluka 1
-    whens = []
-    if job.village:
-        whens.append(When(village__iexact=job.village, then=Value(2)))
-    if job.taluka:
-        whens.append(When(taluka__iexact=job.taluka, then=Value(1)))
-    labour = labour.annotate(
-        nearness=Case(*whens, default=Value(0), output_field=IntegerField())
-    ).order_by("-skill_match", "-nearness", "expected_wage", "id")
+    labour = labour.order_by("-skill_match", "id")
 
     total = labour.count()
     limit = _int(request.GET.get("limit"), 200) or 20
@@ -644,43 +732,47 @@ def labour_profile(request):
 
 
 @require_GET
-def labour_jobs(request, labour_id):
-    """Open upcoming jobs that match this labourer's skills, with filters.
-    GET /api/labour/<labour_id>/jobs/
-        ?taluka=Niphad &date_from=2026-10-20 &date_to=2026-10-30
-        &min_wage=600 &limit=20 &offset=0"""
-    try:
-        p = LabourProfile.objects.prefetch_related("skills").get(id=labour_id)
-    except LabourProfile.DoesNotExist:
-        return JsonResponse({"error": "Labour profile not found"}, status=404)
-
-    skill_ids = [s.id for s in p.skills.all()]
-    today = date.today()
-
+def explore_jobs(request):
+    """Browse all open, upcoming jobs. No profile needed.
+    GET /api/jobs/explore/
+        ?skill=Tomato picking,Weeding &category=Harvesting &q=tomato
+        &district=Nashik &taluka=Niphad &village=Pimpalgaon
+        &date=2026-10-20 &date_from=2026-10-20 &date_to=2026-10-30
+        &min_wage=600 &max_wage=900 &min_workers=5
+        &payment_method=Daily wage / per day
+        &sort=date|newest|wage_high|wage_low
+        &labour_id=8 &limit=20 &offset=0
+    skill can be comma separated or repeated. labour_id is optional and only
+    adds offer_status per job for that labourer."""
     jobs = (
         JobRequirement.objects.filter(status=JobRequirement.Status.OPEN)
-        .filter(Q(work_date__gte=today) | Q(work_date__isnull=True))
+        .filter(Q(work_date__gte=date.today()) | Q(work_date__isnull=True))
         .select_related("farmer", "farmer__user")
         .prefetch_related("skills")
     )
 
-    if skill_ids:
-        jobs = jobs.annotate(
-            skill_match=Count("skills", filter=Q(skills__id__in=skill_ids), distinct=True)
-        ).filter(skill_match__gt=0)
-    elif p.preferred_work:
-        # no linked skills: fall back to the work they typed
-        jobs = jobs.filter(job_type__icontains=p.preferred_work).annotate(
-            skill_match=Value(0, output_field=IntegerField())
-        )
-    else:
-        jobs = jobs.none()
+    skills = []
+    for raw in request.GET.getlist("skill"):
+        skills.extend(_as_list(raw))
+    if skills:
+        jobs = jobs.filter(skills__name_en__in=skills).distinct()
 
-    # filters from the screen
-    taluka = request.GET.get("taluka", "").strip()
-    if taluka:
-        jobs = jobs.filter(taluka__iexact=taluka)
+    for param in ("district", "taluka", "village", "category"):
+        value = request.GET.get(param, "").strip()
+        if value:
+            jobs = jobs.filter(**{f"{param}__iexact": value})
 
+    payment_method = request.GET.get("payment_method", "").strip()
+    if payment_method:
+        jobs = jobs.filter(payment_method__iexact=payment_method)
+
+    q = request.GET.get("q", "").strip()
+    if q:
+        jobs = jobs.filter(Q(job_type__icontains=q) | Q(village__icontains=q))
+
+    exact_date = _date(request.GET.get("date"))
+    if exact_date:
+        jobs = jobs.filter(work_date=exact_date)
     date_from = _date(request.GET.get("date_from"))
     if date_from:
         jobs = jobs.filter(work_date__gte=date_from)
@@ -691,29 +783,38 @@ def labour_jobs(request, labour_id):
     min_wage = _decimal(request.GET.get("min_wage"), 1_000_000)
     if min_wage is not None:
         jobs = jobs.filter(wage_offered__gte=min_wage)
+    max_wage = _decimal(request.GET.get("max_wage"), 1_000_000)
+    if max_wage is not None:
+        jobs = jobs.filter(wage_offered__lte=max_wage)
 
-    # nearness to the labourer: same village 2, same taluka 1
-    whens = []
-    if p.village:
-        whens.append(When(village__iexact=p.village, then=Value(2)))
-    if p.taluka:
-        whens.append(When(taluka__iexact=p.taluka, then=Value(1)))
-    jobs = jobs.annotate(
-        nearness=Case(*whens, default=Value(0), output_field=IntegerField())
-    ).order_by("-skill_match", "-nearness", "work_date", "-wage_offered", "id")
+    min_workers = _int(request.GET.get("min_workers"))
+    if min_workers:
+        jobs = jobs.filter(workers_needed__gte=min_workers)
+
+    sort = request.GET.get("sort", "date")
+    if sort == "newest":
+        jobs = jobs.order_by("-created_at", "id")
+    elif sort == "wage_high":
+        jobs = jobs.order_by(F("wage_offered").desc(nulls_last=True), "id")
+    elif sort == "wage_low":
+        jobs = jobs.order_by(F("wage_offered").asc(nulls_last=True), "id")
+    else:
+        jobs = jobs.order_by(F("work_date").asc(nulls_last=True), "id")
 
     total = jobs.count()
     limit = _int(request.GET.get("limit"), 200) or 20
     offset = _int(request.GET.get("offset"), 1_000_000) or 0
     page = list(jobs[offset:offset + limit])
 
-    offer_status = dict(
-        Offer.objects.filter(labour=p, job_id__in=[j.id for j in page])
-        .values_list("job_id", "status")
-    )
+    offer_status = {}
+    labour_id = _int(request.GET.get("labour_id"))
+    if labour_id:
+        offer_status = dict(
+            Offer.objects.filter(labour_id=labour_id, job_id__in=[j.id for j in page])
+            .values_list("job_id", "status")
+        )
 
     return JsonResponse({
-        "labour_id": p.id,
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -723,16 +824,136 @@ def labour_jobs(request, labour_id):
                 "job_type": j.job_type,
                 "category": j.category,
                 "skills": [s.name_en for s in j.skills.all()],
-                "matched_skills": j.skill_match,
                 "work_date": j.work_date,
                 "workers_needed": j.workers_needed,
                 "wage_offered": j.wage_offered,
                 "payment_method": j.payment_method,
-                "village": j.village,
+                "district": j.district,
                 "taluka": j.taluka,
+                "village": j.village,
                 "farmer_name": j.farmer.user.first_name,
                 "offer_status": offer_status.get(j.id, "none"),
+                "created_at": j.created_at,
             }
             for j in page
+        ],
+    })
+
+
+@require_GET
+def explore_workers(request):
+    """Browse all available workers and teams. No job needed.
+    GET /api/workers/explore/
+        ?skill=Tomato picking,Spraying &skill_category=Harvesting &q=girnara
+        &type=team|individual &district=Nashik &taluka=Niphad &village=Girnara
+        &min_wage=500 &max_wage=700 &min_team_size=5
+        &availability=now|week|later &date=2026-10-20
+        &min_worked_days=10
+        &sort=newest|wage_low|wage_high|team_size|experience
+        &limit=20 &offset=0
+    skill can be comma separated or repeated. date returns workers who are
+    free on that day (no date window set counts as free)."""
+    workers = (
+        LabourProfile.objects.filter(is_available=True)
+        .select_related("user")
+        .prefetch_related("skills")
+    )
+
+    skills = []
+    for raw in request.GET.getlist("skill"):
+        skills.extend(_as_list(raw))
+    if skills:
+        workers = workers.filter(skills__name_en__in=skills).distinct()
+
+    skill_category = request.GET.get("skill_category", "").strip()
+    if skill_category:
+        workers = workers.filter(
+            skills__category__name_en__iexact=skill_category
+        ).distinct()
+
+    profile_type = request.GET.get("type", "")
+    if profile_type in LabourProfile.Type.values:
+        workers = workers.filter(type=profile_type)
+
+    for param in ("district", "taluka", "village"):
+        value = request.GET.get(param, "").strip()
+        if value:
+            workers = workers.filter(**{f"{param}__iexact": value})
+
+    availability = request.GET.get("availability", "")
+    if availability in LabourProfile.Availability.values:
+        workers = workers.filter(availability=availability)
+
+    q = request.GET.get("q", "").strip()
+    if q:
+        workers = workers.filter(
+            Q(team_name__icontains=q)
+            | Q(user__first_name__icontains=q)
+            | Q(preferred_work__icontains=q)
+            | Q(village__icontains=q)
+        )
+
+    # free on a given day: no window set, or the day falls inside it
+    free_on = _date(request.GET.get("date"))
+    if free_on:
+        workers = workers.filter(
+            Q(available_from__isnull=True) | Q(available_from__lte=free_on),
+            Q(available_to__isnull=True) | Q(available_to__gte=free_on),
+        )
+
+    min_wage = _decimal(request.GET.get("min_wage"), 1_000_000)
+    if min_wage is not None:
+        workers = workers.filter(expected_wage__gte=min_wage)
+    max_wage = _decimal(request.GET.get("max_wage"), 1_000_000)
+    if max_wage is not None:
+        workers = workers.filter(expected_wage__lte=max_wage)
+
+    min_team_size = _int(request.GET.get("min_team_size"))
+    if min_team_size:
+        workers = workers.filter(team_size__gte=min_team_size)
+
+    min_worked_days = _int(request.GET.get("min_worked_days"))
+    if min_worked_days:
+        workers = workers.filter(worked_days__gte=min_worked_days)
+
+    sort = request.GET.get("sort", "newest")
+    if sort == "wage_low":
+        workers = workers.order_by(F("expected_wage").asc(nulls_last=True), "id")
+    elif sort == "wage_high":
+        workers = workers.order_by(F("expected_wage").desc(nulls_last=True), "id")
+    elif sort == "team_size":
+        workers = workers.order_by("-team_size", "id")
+    elif sort == "experience":
+        workers = workers.order_by(F("worked_days").desc(nulls_last=True), "id")
+    else:
+        workers = workers.order_by("-created_at", "id")
+
+    total = workers.count()
+    limit = _int(request.GET.get("limit"), 200) or 20
+    offset = _int(request.GET.get("offset"), 1_000_000) or 0
+
+    return JsonResponse({
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "workers": [
+            {
+                "labour_id": p.id,
+                "name": p.team_name or p.user.first_name or "Worker",
+                "type": p.type,
+                "team_size": p.team_size,
+                "district": p.district,
+                "taluka": p.taluka,
+                "village": p.village,
+                "skills": [s.name_en for s in p.skills.all()],
+                "preferred_work": p.preferred_work,
+                "expected_wage": p.expected_wage,
+                "worked_days": p.worked_days,
+                "travel_km": p.travel_km,
+                "availability": p.availability,
+                "available_from": p.available_from,
+                "available_to": p.available_to,
+            }
+            for p in workers[offset:offset + limit]
         ],
     })

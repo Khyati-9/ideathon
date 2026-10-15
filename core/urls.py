@@ -12,4 +12,6 @@ urlpatterns = [
     path("labour/profile/", views.labour_profile, name="labour-profile"),
     path("labour/<int:labour_id>/jobs/", views.labour_jobs, name="labour-jobs"),
     path("otp/send/", views.send_otp, name="send_otp"),
+    path("jobs/explore/", views.explore_jobs, name="explore-jobs"),
+    path("workers/explore/", views.explore_workers, name="explore-workers"),
 ]

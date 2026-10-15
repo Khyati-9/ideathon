@@ -78,7 +78,7 @@ document.querySelector('#worker-type')?.addEventListener('change',syncTeamFields
 const openModal = role => { currentRole=role; document.querySelector('#lead-form').hidden=false; modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; refreshModal(document.documentElement.lang==='mr'?'mr':document.documentElement.lang==='hi'?'hi':'en'); syncTeamFields(); syncRequiredFields(); setTimeout(()=>modal.querySelector('input')?.focus(),50); };
 const closeModal = () => { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; };
 const showView = view => { document.querySelector('main').hidden=true; document.querySelector('footer').hidden=true; document.querySelectorAll('.app-view').forEach(v=>{v.hidden=true;v.classList.remove('view-enter');}); const active=document.querySelector(view); active.hidden=false; requestAnimationFrame(()=>active.classList.add('view-enter')); window.scrollTo({top:0,behavior:'smooth'}); };
-const showHome = () => { document.querySelector('main').hidden=false; document.querySelector('footer').hidden=false; document.querySelectorAll('.app-view').forEach(v=>v.hidden=true); window.location.hash='top'; window.scrollTo({top:0,behavior:'smooth'}); };
+const showHome = (updateHash=true) => { document.querySelector('main').hidden=false; document.querySelector('footer').hidden=false; document.querySelectorAll('.app-view').forEach(v=>v.hidden=true); if(updateHash && window.location.hash!=='#top') window.location.hash='top'; if(updateHash) window.scrollTo({top:0,behavior:'smooth'}); };
 const sourceJobs = Object.fromEntries((typeof importedData!=='undefined'?importedData.farmers:[]).map(f=>[f.id,{...f,title:(f.activitiesRaw||f.otherWork||'Local work').split('/')[0].trim(),location:[f.village,f.taluka].filter(Boolean).join(', '),workers:f.workersNeeded,rate:700,rateLabel:'Rate discussed',days:1,skills:f.skills||[]}]));
 const trendingJobs = [
   {id:'trending-onion',titleKey:'onionPlanting',title:'Onion planting',location:'Niphad',workers:8,wage:650,neededDate:'This week',payment:'Daily wage',skills:['onion planting','onion harvesting'],filter:'onion'},
@@ -173,6 +173,46 @@ document.querySelector('#offer-form').addEventListener('submit',e=>{e.preventDef
 document.querySelector('.offer-close').addEventListener('click',closeOffer); offerModal.addEventListener('click',e=>{if(e.target===offerModal)closeOffer()});
 document.querySelectorAll('[data-back-home]').forEach(btn=>btn.addEventListener('click',showHome));
 document.querySelector('.modal-close').addEventListener('click',closeModal); document.querySelector('.modal-close-secondary').addEventListener('click',closeModal); modal.addEventListener('click',e=>{if(e.target===modal)closeModal()}); document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// Keep the visible single-page view in sync with the browser's session history.
+// The app uses hash routes for deep links, but previously only the URL changed;
+// browser Back/Forward therefore left the old view mounted on screen.
+const routeFromHash = () => {
+  const route = window.location.hash.replace(/^#/, '').split('?')[0];
+  return route || 'top';
+};
+const syncRouteToView = () => {
+  const route = routeFromHash();
+  if (route === 'explore') {
+    closeModal();
+    renderExplore(activeExploreFilter);
+    showView('#explore-view');
+    loadRemoteExplore('jobs');
+    return;
+  }
+  if (route === 'workers') {
+    closeModal();
+    renderWorkers();
+    showView('#workers-view');
+    loadRemoteExplore('workers');
+    return;
+  }
+  if (route === 'profile') {
+    closeModal();
+    showProfile();
+    return;
+  }
+
+  // Normal homepage anchors (#how, #work-types, etc.) should remain native
+  // anchor navigation while ensuring any previously open app view is hidden.
+  if (document.querySelector('main')?.hidden) showHome(false);
+  if (route !== 'top') {
+    requestAnimationFrame(() => document.getElementById(route)?.scrollIntoView({behavior: 'auto', block: 'start'}));
+  }
+};
+window.addEventListener('hashchange', syncRouteToView);
+window.addEventListener('popstate', syncRouteToView);
+window.addEventListener('pageshow', syncRouteToView);
 const LIVE_API_BASE_URL = 'https://kaamsetu.phala.work/api';
 const isHttpPage = window.location.protocol === 'http:' || window.location.protocol === 'https:';
 // On the deployed site, route through Netlify so the browser talks to the
@@ -265,3 +305,7 @@ const removeButtonArrows = () => document.querySelectorAll('button').forEach(but
 });
 removeButtonArrows();
 new MutationObserver(removeButtonArrows).observe(document.body, { childList: true, subtree: true });
+
+// Apply the current deep link on first load as well as after browser history
+// navigation. This makes pasted /app/#explore and refreshed view URLs work.
+syncRouteToView();

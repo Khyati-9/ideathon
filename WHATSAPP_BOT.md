@@ -34,6 +34,8 @@ https://kaamsetu.phala.work/whatsapp/webhook
 6. Subscribe the WhatsApp business account to the `messages` webhook field.
 7. Set `BOT_DRY_RUN=false` and add the real credentials to the hosting provider's environment variables.
 
+`WHATSAPP_APP_SECRET` may remain blank during development. The bot will still send messages and accept webhook events, but incoming webhook signature verification is disabled until you add the Meta App Secret.
+
 ### Deploying as a separate Node service
 
 If your current `kaamsetu.phala.work` server cannot run Node, deploy this repository as a separate web service on Render, Railway, Fly.io or your own VPS:
@@ -70,7 +72,7 @@ WHATSAPP_GRAPH_VERSION=v23.0
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_ACCESS_TOKEN=your_meta_access_token
 WHATSAPP_VERIFY_TOKEN=your_long_random_verify_token
-WHATSAPP_APP_SECRET=your_meta_app_secret
+WHATSAPP_APP_SECRET=
 BOT_DRY_RUN=false
 ```
 

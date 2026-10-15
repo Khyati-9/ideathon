@@ -1,0 +1,8 @@
+{
+  "name": "kaamsetu",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start:whatsapp": "node whatsapp-bot.mjs"
+  }
+}

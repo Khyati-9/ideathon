@@ -31,8 +31,8 @@ const languageText = {
   en: {
     welcome: 'Welcome to KaamSetu! Choose your language.',
     language: '1. Marathi\n2. Hindi\n3. English',
-    role: 'What do you need today?',
-    farmer: 'Farmer', worker: 'Worker',
+    role: 'What are you looking for?',
+    farmer: 'Looking for workers', worker: 'Looking for work',
     farmerMenu: 'Choose an option:', post: 'Post work', browseWorkers: 'Explore workers', myProfile: 'My profile',
     workerMenu: 'Choose an option:', findWork: 'Find work', availability: 'Post my availability', browseJobs: 'Explore jobs',
     reset: 'Start again', back: 'Back', cancel: 'Cancel',
@@ -125,7 +125,15 @@ const list = (to, text, items) => sendOptions(to, text, { type: 'interactive', p
 async function promptMenu(session) {
   const to = session.phone;
   if (!session.lang) return sendWhatsApp(to, `${languageText.en.welcome}\n\n${languageText.en.language}`);
-  if (!session.role) return buttons(to, t(session, 'role'), [{ id: 'farmer', title: t(session, 'farmer') }, { id: 'worker', title: t(session, 'worker') }]);
+  if (!session.role) {
+    const labels = session.lang === 'mr'
+      ? ['कामगार शोधत आहे', 'काम शोधत आहे']
+      : session.lang === 'hi'
+        ? ['कामगार ढूंढ रहा हूं', 'काम ढूंढ रहा हूं']
+        : ['Looking for workers', 'Looking for work'];
+    const prompt = session.lang === 'mr' ? 'तुम्ही काय शोधत आहात?' : session.lang === 'hi' ? 'आप क्या ढूंढ रहे हैं?' : t(session, 'role');
+    return buttons(to, prompt, [{ id: 'farmer', title: labels[0] }, { id: 'worker', title: labels[1] }]);
+  }
   if (session.role === 'farmer') return buttons(to, t(session, 'farmerMenu'), [{ id: 'post', title: t(session, 'post') }, { id: 'browse_workers', title: t(session, 'browseWorkers') }, { id: 'reset', title: t(session, 'reset') }]);
   return buttons(to, t(session, 'workerMenu'), [{ id: 'availability', title: t(session, 'availability') }, { id: 'browse_jobs', title: t(session, 'browseJobs') }, { id: 'reset', title: t(session, 'reset') }]);
 }
@@ -144,7 +152,7 @@ export async function handleMessage(phone, message) {
     return promptMenu(session);
   }
   if (!session.role) {
-    session.role = choice === 'farmer' || choice === '1' || choice.includes('शेत') || choice.includes('किसान') ? 'farmer' : choice === 'worker' || choice === '2' || choice.includes('कामगार') || choice.includes('मज़दूर') ? 'worker' : null;
+    session.role = choice === 'farmer' || choice === '1' || choice.includes('शेत') || choice.includes('किसान') || choice.includes('कामगार शोध') || choice.includes('मज़दूर ढूंढ') || choice.includes('looking for workers') ? 'farmer' : choice === 'worker' || choice === '2' || choice.includes('कामगार') || choice.includes('मज़दूर') || choice.includes('काम शोध') || choice.includes('काम ढूंढ') || choice.includes('looking for work') ? 'worker' : null;
     if (!session.role) return sendWhatsApp(phone, t(session, 'invalid'));
     setStep(session, 'menu');
     return promptMenu(session);

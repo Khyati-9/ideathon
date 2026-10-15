@@ -9,6 +9,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.http import Http404, JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, Count, F, IntegerField, Q, Value, When
@@ -960,3 +961,71 @@ def explore_workers(request):
             for p in workers[offset:offset + limit]
         ],
     })
+
+
+# ---------- WhatsApp / lightweight offer flow ----------
+
+@csrf_exempt
+@require_POST
+def create_offer(request):
+    """Create a pending farmer-to-worker offer or worker-to-job bid.
+
+    The prototype bot sends ``from_phone``, ``target_id`` and ``amount``.
+    A farmer's target is a labour id and the newest open job is used; a
+    worker's target is a job id and the worker is resolved from the phone.
+    Phone numbers are used only for identity and are never returned here.
+    """
+    data = _body(request)
+    if data is None:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    phone = _phone(data.get("from_phone") or data.get("phone"))
+    amount = _decimal(data.get("amount") or data.get("wage"), 1_000_000)
+    target_id = _int(data.get("target_id"), 1_000_000)
+    if not phone or amount is None or not target_id:
+        return JsonResponse({"error": "from_phone, target_id and positive amount are required"}, status=422)
+
+    try:
+        user = User.objects.get(phone=phone)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "Profile not found for this phone"}, status=404)
+
+    try:
+        if user.role == User.Role.FARMER:
+            farmer = user.farmer_profile
+            job = farmer.jobs.filter(status=JobRequirement.Status.OPEN).order_by("-created_at").first()
+            labour = LabourProfile.objects.get(id=target_id, is_available=True)
+        else:
+            labour = user.labour_profile
+            job = JobRequirement.objects.get(id=target_id, status=JobRequirement.Status.OPEN)
+    except (FarmerProfile.DoesNotExist, LabourProfile.DoesNotExist, JobRequirement.DoesNotExist):
+        return JsonResponse({"error": "Target profile or open job not found"}, status=404)
+    if not job:
+        return JsonResponse({"error": "No open job found for this farmer"}, status=404)
+
+    offer, created = Offer.objects.update_or_create(
+        job=job, labour=labour,
+        defaults={"wage": amount, "headcount": labour.team_size or 1, "status": Offer.Status.PENDING, "message": _text(data, "message", 300)},
+    )
+    return JsonResponse({"ok": True, "created": created, "offer": {"offer_id": offer.id, "job_id": job.id, "labour_id": labour.id, "wage": offer.wage, "status": offer.status}}, status=201 if created else 200)
+
+
+@csrf_exempt
+@require_POST
+def respond_offer(request, offer_id):
+    data = _body(request)
+    if data is None:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    status = _text(data, "status", 20).lower()
+    if status not in {Offer.Status.ACCEPTED, Offer.Status.REJECTED, Offer.Status.WITHDRAWN}:
+        return JsonResponse({"error": "status must be accepted, rejected, or withdrawn"}, status=422)
+    try:
+        offer = Offer.objects.get(id=offer_id)
+    except Offer.DoesNotExist:
+        return JsonResponse({"error": "Offer not found"}, status=404)
+    offer.status = status
+    offer.responded_at = timezone.now()
+    offer.save(update_fields=["status", "responded_at", "updated_at"])
+    if status == Offer.Status.ACCEPTED:
+        offer.job.status = JobRequirement.Status.FILLED
+        offer.job.save(update_fields=["status", "updated_at"])
+    return JsonResponse({"ok": True, "offer": {"offer_id": offer.id, "status": offer.status, "job_id": offer.job_id, "labour_id": offer.labour_id}})

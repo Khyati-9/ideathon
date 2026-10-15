@@ -14,4 +14,6 @@ urlpatterns = [
     path("otp/send/", views.send_otp, name="send_otp"),
     path("jobs/explore/", views.explore_jobs, name="explore-jobs"),
     path("workers/explore/", views.explore_workers, name="explore-workers"),
+    path("offers/", views.create_offer, name="create-offer"),
+    path("offers/<int:offer_id>/respond/", views.respond_offer, name="respond-offer"),
 ]

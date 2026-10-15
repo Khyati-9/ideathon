@@ -367,17 +367,18 @@ def demo_farmers(request):
 @require_GET
 def farmer_profile(request):
     """Farmer's profile: his details and his jobs (no labour in here).
-    GET /api/farmer/profile/?phone=1234567890"""
+    GET /api/farmer/profile/?farmer_id=12
+    GET /api/farmer/profile/?phone=1234567890   (still works)"""
+    farmer_id = _int(request.GET.get("farmer_id"))
     phone = _phone(request.GET.get("phone"))
-    if not phone:
-        return _phone_error()
+    if not farmer_id and not phone:
+        return JsonResponse({"error": "Send farmer_id or phone"}, status=400)
 
+    lookup = {"id": farmer_id} if farmer_id else {"user__phone": phone}
     try:
-        farmer = FarmerProfile.objects.select_related("user").get(user__phone=phone)
+        farmer = FarmerProfile.objects.select_related("user").get(**lookup)
     except FarmerProfile.DoesNotExist:
-        return JsonResponse(
-            {"error": "No farmer profile found for this number"}, status=404
-        )
+        return JsonResponse({"error": "No farmer profile found"}, status=404)
 
     jobs = farmer.jobs.prefetch_related("skills").order_by("-created_at")
 
@@ -643,21 +644,22 @@ def demo_labour(request):
 @require_GET
 def labour_profile(request):
     """Labourer's profile: his details and the offers sent to him.
-    GET /api/labour/profile/?phone=1234567890"""
+    GET /api/labour/profile/?labour_id=8
+    GET /api/labour/profile/?phone=1234567890   (still works)"""
+    labour_id = _int(request.GET.get("labour_id"))
     phone = _phone(request.GET.get("phone"))
-    if not phone:
-        return _phone_error()
+    if not labour_id and not phone:
+        return JsonResponse({"error": "Send labour_id or phone"}, status=400)
 
+    lookup = {"id": labour_id} if labour_id else {"user__phone": phone}
     try:
         p = (
             LabourProfile.objects.select_related("user")
             .prefetch_related("skills")
-            .get(user__phone=phone)
+            .get(**lookup)
         )
     except LabourProfile.DoesNotExist:
-        return JsonResponse(
-            {"error": "No labour profile found for this number"}, status=404
-        )
+        return JsonResponse({"error": "No labour profile found"}, status=404)
 
     offers = (
         Offer.objects.filter(labour=p)
@@ -822,6 +824,7 @@ def explore_jobs(request):
             {
                 "job_id": j.id,
                 "job_type": j.job_type,
+                "farmer_id": j.farmer_id, 
                 "category": j.category,
                 "skills": [s.name_en for s in j.skills.all()],
                 "work_date": j.work_date,

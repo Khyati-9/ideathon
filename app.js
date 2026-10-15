@@ -90,11 +90,11 @@ let activeExploreFilter='';
 let remoteExploreData = null;
 const renderExplore = (filter=activeExploreFilter, jobsOverride=null) => { const grid=document.querySelector('#imported-explore-grid'); if(!grid)return; activeExploreFilter=filter||''; const allJobs=jobsOverride||remoteExploreData?.jobs||[...Object.values(sourceJobs),...trendingJobs.filter(trending=>!sourceJobs[trending.id])]; const jobsToShow=filter?allJobs.filter(job=>{const haystack=[job.title,job.titleKey,job.activitiesRaw,job.otherWork,...(job.skills||[])].filter(Boolean).join(' ').toLowerCase();return haystack.includes(filter.toLowerCase());}):allJobs; grid.innerHTML=jobsToShow.length?jobsToShow.map(job=>{const match=job.match||findWorkerMatches(job)[0];const wage=job.wageOffer||job.wage;const wageBlock=wage?`<div class="job-wage-offer">${ui('farmerOffers')} <strong>₹${wage} / day</strong></div>`:'';return `<article class="explore-card"><div class="explore-card-top"><span class="job-pill">● ${ui('openLabel')}</span><span class="job-date">📅 ${job.neededDate||ui('dateToDiscuss')}</span></div><div class="job-owner"><div class="profile-avatar">${(job.name||'शे').trim().charAt(0)}</div><span>${ui('postedBy')} <strong>${job.name||'Local farmer'}</strong></span></div><h3>${job.titleKey?ui(job.titleKey):job.title}</h3><p>${job.workers||'Several'} workers · ${job.location||ui('nearby')}</p>${wageBlock}<div class="explore-meta"><span>${job.payment||ui('paymentDiscuss')}</span><span>${match?`${match.overlap||match.matched_skills||1} ${ui('skillMatch')}`:ui('matchNow')}</span></div><button class="outline-action" data-job-id="${job.id}" data-api-job-id="${job.apiJobId||''}">${ui('sendRequest')}</button></article>`}).join(''):`<div class="empty-state">${remoteExploreData?ui('noLiveJobs'): 'No matching jobs found yet.'}</div>`; };
 const workerWage = worker => {const match=String(worker.minWage||worker.expected_wage||'').match(/\d+(?:-\d+)?/);return match?`₹${match[0]} / day`:'Wage to discuss';};
-const renderWorkers = (workersOverride=null) => {const grid=document.querySelector('#imported-workers-grid');if(!grid)return;const workers=workersOverride||remoteExploreData?.workers||(typeof importedData!=='undefined'?importedData.workers:[]);grid.innerHTML=workers.map(worker=>`<article class="explore-card worker-card"><div class="worker-card-head"><div class="profile-avatar">${(worker.name||'म').trim().charAt(0)}</div><div><h3>${worker.name||'Worker'}</h3><p>${[worker.village,worker.taluka].filter(Boolean).join(', ')||ui('nearby')} · ${worker.available||worker.availability||ui('availabilityUnknown')}</p></div></div><p class="worker-skills">${(worker.skills||[]).slice(0,5).join(' · ')||ui('skillsDiscuss')}</p><div class="explore-meta"><span>${ui('asks')} <strong>${workerWage(worker)}</strong></span><span>${worker.travel||`${worker.travel_km||'—'} km`}</span></div><button class="outline-action" data-worker-id="${worker.id||worker.labour_id}">${ui('bidWorker')}</button></article>`).join('')||`<div class="empty-state">${remoteExploreData?ui('noLiveWorkers'):'No workers found yet.'}</div>`;};
+const renderWorkers = (workersOverride=null) => {const grid=document.querySelector('#imported-workers-grid');if(!grid)return;const workers=workersOverride||remoteExploreData?.workers||(typeof importedData!=='undefined'?importedData.workers:[]);grid.innerHTML=workers.map(worker=>`<article class="explore-card worker-card"><div class="worker-card-head"><div class="profile-avatar">${(worker.name||'म').trim().charAt(0)}</div><div><h3>${worker.name||'Worker'}</h3><p>${worker.type==='team'?`Team · ${worker.team_size||'—'} people · `:''}${[worker.village,worker.taluka].filter(Boolean).join(', ')||ui('nearby')} · ${worker.available||worker.availability||ui('availabilityUnknown')}</p></div></div><p class="worker-skills">${(worker.skills||[]).slice(0,5).join(' · ')||ui('skillsDiscuss')}</p><div class="explore-meta"><span>${ui('asks')} <strong>${workerWage(worker)}</strong></span><span>${worker.travel||`${worker.travel_km||'—'} km`}</span></div><button class="outline-action" data-worker-id="${worker.id||worker.labour_id}">${ui('bidWorker')}</button></article>`).join('')||`<div class="empty-state">${remoteExploreData?ui('noLiveWorkers'):'No workers found yet.'}</div>`;};
 const showExplore = (filter='') => { closeModal(); renderExplore(filter); showView('#explore-view'); window.location.hash='explore'; loadRemoteExplore('jobs'); };
 const showWorkers = () => { closeModal(); renderWorkers(); showView('#workers-view'); window.location.hash='workers'; loadRemoteExplore('workers'); };
 let profileData = JSON.parse(localStorage.getItem('kaamsetu-profile')||'null'); let currentJob = jobs.tomato; let bookingState = 'farmer-review';
-const apiHeaders = {'Content-Type':'application/json'};
+const apiHeaders = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};
 const apiGet = async path => { const response=await fetch(`${API_BASE_URL.replace(/\/$/,'')}${path}`,{headers:apiHeaders}); let result={}; try{result=await response.json();}catch{} if(!response.ok)throw new Error(result?.error||'Could not load data.'); return result; };
 const loadRemoteExplore = async view => {
   if (remoteExploreData) {
@@ -103,45 +103,32 @@ const loadRemoteExplore = async view => {
     return;
   }
   try {
-    const farmerResponse = await apiGet('/demo/farmers/?limit=100');
-    const farmers = Array.isArray(farmerResponse.farmers) ? farmerResponse.farmers : [];
-    const profiles = await Promise.all(farmers.map(async farmer => {
-      try { return await apiGet(`/farmer/profile/?phone=${encodeURIComponent(farmer.phone)}`); }
-      catch { return { farmer, jobs: [] }; }
+    const [jobsResponse, workersResponse] = await Promise.all([
+      apiGet('/jobs/explore/?limit=100&sort=date'),
+      apiGet('/workers/explore/?limit=100&sort=newest')
+    ]);
+    const jobs = (Array.isArray(jobsResponse.jobs) ? jobsResponse.jobs : []).map(job => ({
+      id: `api-job-${job.job_id}`,
+      apiJobId: job.job_id,
+      name: job.farmer_name || 'Local farmer',
+      title: job.job_type || job.category || 'Work requirement',
+      location: [job.village, job.taluka, job.district].filter(Boolean).join(', '),
+      workers: job.workers_needed,
+      wageOffer: job.wage_offered,
+      neededDate: job.work_date,
+      payment: job.payment_method || 'Rate offered by farmer',
+      skills: Array.isArray(job.skills) ? job.skills : [],
+      status: job.offer_status,
+      category: job.category
     }));
-    const jobs = profiles.flatMap(profile => {
-      const farmer = profile.farmer || {};
-      return (Array.isArray(profile.jobs) ? profile.jobs : []).map(job => ({
-        id: `api-job-${job.job_id}`,
-        apiJobId: job.job_id,
-        name: farmer.name || 'Local farmer',
-        title: job.job_type || job.category || 'Work requirement',
-        location: [job.village || farmer.village, job.taluka || farmer.taluka].filter(Boolean).join(', '),
-        workers: job.workers_needed,
-        wageOffer: job.wage_offered,
-        neededDate: job.work_date,
-        payment: job.payment || 'Rate offered by farmer',
-        skills: Array.isArray(job.skills) ? job.skills : [],
-        status: job.status
-      }));
-    });
-    const matchResponses = await Promise.all(jobs.map(async job => {
-      try { return await apiGet(`/farmer/jobs/${encodeURIComponent(job.apiJobId)}/matches/?limit=100`); }
-      catch { return { matches: [] }; }
+    const workers = (Array.isArray(workersResponse.workers) ? workersResponse.workers : []).map(worker => ({
+      ...worker,
+      id: worker.labour_id,
+      minWage: worker.expected_wage,
+      available: worker.availability,
+      travel: worker.travel_km != null ? `${worker.travel_km} km` : ''
     }));
-    const workersById = new Map();
-    matchResponses.forEach(response => (Array.isArray(response.matches) ? response.matches : []).forEach(worker => {
-      const id = worker.labour_id || `${worker.name}-${worker.village || ''}`;
-      const existing = workersById.get(id);
-      if (!existing || Number(worker.matched_skills || 0) > Number(existing.matched_skills || 0)) workersById.set(id, {
-        ...worker,
-        id,
-        minWage: worker.expected_wage,
-        available: worker.availability,
-        travel: worker.travel_km ? `${worker.travel_km} km` : ''
-      });
-    }));
-    remoteExploreData = { jobs, workers: [...workersById.values()] };
+    remoteExploreData = { jobs, workers, jobsTotal: jobsResponse.total || jobs.length, workersTotal: workersResponse.total || workers.length };
     if (view === 'workers') renderWorkers(remoteExploreData.workers);
     else renderExplore(activeExploreFilter, remoteExploreData.jobs);
   } catch (error) {
@@ -213,10 +200,10 @@ const syncRouteToView = () => {
 window.addEventListener('hashchange', syncRouteToView);
 window.addEventListener('popstate', syncRouteToView);
 window.addEventListener('pageshow', syncRouteToView);
-const LIVE_API_BASE_URL = 'https://kaamsetu.phala.work/api';
+const LIVE_API_BASE_URL = 'https://josef-spiry-overply.ngrok-free.dev/api';
+// Keep the live backend in one place so a new ngrok URL is a one-line change.
+// A runtime override is useful for local/staging deployments.
 const isHttpPage = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-// On the deployed site, route through Netlify so the browser talks to the
-// same origin. This avoids the live backend's missing CORS preflight support.
 const API_BASE_URL = window.KAAMSETU_API_BASE_URL || (isHttpPage ? `${window.location.origin}/api` : LIVE_API_BASE_URL);
 const readFormData = form => { const data={}; for(const [key,value] of new FormData(form).entries()){ if(data[key]) data[key]=Array.isArray(data[key])?[...data[key],value]:[data[key],value]; else data[key]=value; } ['activities','skills'].forEach(key=>{if(data[key]&&!Array.isArray(data[key]))data[key]=[data[key]];}); return data; };
 const apiPayload = (data,role) => { const farmerFields=['phone','alternatePhone','name','taluka','village','district','category','jobType','workCategory','farmSize','count','date','wageOffer','payMethod','contactPreference','activities']; const workerFields=['phone','alternatePhone','name','taluka','village','district','type','teamName','teamSize','preferredWork','wageAsk','workedDays','date','travelKm','availability','availableFrom','availableTo','lastWorkSource','contactPreference','skills']; const fields=role==='worker'?workerFields:farmerFields; return Object.fromEntries(fields.filter(key=>data[key]!==undefined&&data[key]!=='').map(key=>[key,data[key]])); };

@@ -60,13 +60,25 @@ async function routeFlowButton(phone, message) {
     if (button?.next) {
       const next = flow.nodes.find(item => item.id === button.next);
       if (next) {
-        if (next.buttons?.length) await buttons(phone, next.text, next.buttons.map(item => ({ id: item.id, title: item.title })));
-        else await sendWhatsApp(phone, next.text);
+        await sendFlowNode(phone, flow, next.id);
         return true;
       }
     }
   }
   return false;
+}
+async function sendFlowNode(phone, flow, nodeId) {
+  const node = flow.nodes.find(item => item.id === nodeId);
+  if (!node) throw new Error(`Flow node not found: ${nodeId}`);
+  if (node.buttons?.length) return buttons(phone, node.text, node.buttons.slice(0, 3).map(item => ({ id: item.id, title: item.title })));
+  return sendWhatsApp(phone, node.text);
+}
+async function startFlow(phone, flowId) {
+  await loadCampaignStore();
+  const flow = campaignStore.flows.find(item => item.flow_id === flowId || item.name === flowId);
+  if (!flow || !flow.nodes.length) throw new Error('Flow not found or empty');
+  await sendFlowNode(phone, flow, flow.nodes[0].id);
+  return { ok: true, flow_id: flow.flow_id, started_at: isoNow(), phone: normalizePhone(phone) };
 }
 const normalizePhone = value => String(value || '').replace(/\D/g, '').replace(/^0+/, '');
 const isoNow = () => new Date().toISOString();
@@ -407,6 +419,8 @@ const server = createServer(async (request, response) => {
       if (request.method === 'POST' && url.pathname === '/whatsapp/ops/templates') { const value = await createTemplate(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
       if (request.method === 'POST' && url.pathname === '/whatsapp/ops/flows') { const value = await saveFlow(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
       if (request.method === 'GET' && url.pathname === '/whatsapp/ops/flows') { await loadCampaignStore(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ flows: campaignStore.flows })); return; }
+      const startFlowMatch = url.pathname.match(/^\/whatsapp\/ops\/flows\/([^/]+)\/start$/);
+      if (request.method === 'POST' && startFlowMatch) { const value = JSON.parse(await body(request)); const result = await startFlow(value.phone, decodeURIComponent(startFlowMatch[1])); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(result)); return; }
       if (request.method === 'POST' && url.pathname === '/whatsapp/ops/campaigns') { const value = await createCampaign(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
       if (request.method === 'GET' && url.pathname === '/whatsapp/ops/campaigns') { await loadCampaignStore(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ campaigns: campaignStore.campaigns.map(campaignSummary) })); return; }
       const adminCampaign = url.pathname.match(/^\/whatsapp\/ops\/campaigns\/([^/]+)(?:\/(send|analytics))?$/);

@@ -323,6 +323,87 @@ const sendOptions = (to, text, options) => sendWhatsApp(to, text, options);
 const buttons = (to, text, items) => sendOptions(to, text, { type: 'interactive', payload: { interactive: { type: 'button', body: { text }, action: { buttons: items.slice(0, 3).map(item => ({ type: 'reply', reply: { id: item.id, title: item.title } })) } } } });
 const list = (to, text, items) => sendOptions(to, text, { type: 'interactive', payload: { interactive: { type: 'list', body: { text }, action: { button: 'Choose', sections: [{ rows: items.slice(0, 10).map(item => ({ id: item.id, title: item.title, description: item.description || '' })) }] } } } });
 
+// One simple onboarding flow: Hello -> role -> category -> subcategory -> location/date/wage.
+// This is intentionally independent of the older multi-language menu flow below.
+const simpleCategories = [
+  { id: 'simple_agri', title: 'शेतीकाम' },
+  { id: 'simple_packhouse', title: 'पॅकहाऊस' },
+  { id: 'simple_loading', title: 'लोडिंग / अनलोडिंग' },
+  { id: 'simple_construction', title: 'बांधकाम' }
+];
+const simpleSubcategories = {
+  simple_agri: ['टोमॅटो तोडणी', 'कांदा काढणी', 'द्राक्ष काढणी', 'डाळिंब तोडणी', 'लागवड', 'खुरपणी', 'फवारणी', 'रोपवाटिका काम'],
+  simple_packhouse: ['पॅकिंग', 'ग्रेडिंग', 'सॉर्टिंग', 'स्टॅकिंग'],
+  simple_loading: ['माल चढवणे', 'माल उतरवणे', 'गोदाम काम'],
+  simple_construction: ['बांधकाम मदतनीस', 'गवंडी मदतनीस', 'खोदकाम']
+};
+const simpleSubcategoryList = category => list(category.phone, 'उपकाम निवडा:', (simpleSubcategories[category.draft.simple_category] || []).map((title, index) => ({ id: `simple_sub_${index}`, title })));
+const simplePrompt = (phone, text, items) => buttons(phone, text, items);
+async function handleSimpleMessage(phone, message) {
+  const session = getSession(phone);
+  const input = valueFromMessage(message);
+  const choice = normalizeChoice(input);
+  const d = session.draft;
+  if (!session.simple) return false;
+  if (session.step === 'simple_role') {
+    if (choice === 'simple_worker') { session.role = 'worker'; session.step = 'simple_category'; return simplePrompt(phone, 'तुम्ही कोणत्या प्रकारचे काम शोधत आहात?', simpleCategories); }
+    if (choice === 'simple_farmer') { session.role = 'farmer'; session.step = 'simple_category'; return simplePrompt(phone, 'तुम्हाला कोणत्या प्रकारचे कामगार हवे आहेत?', simpleCategories); }
+    return simplePrompt(phone, 'कृपया एक पर्याय निवडा:', [{ id: 'simple_worker', title: 'काम शोधत आहे' }, { id: 'simple_farmer', title: 'कामगार शोधत आहे' }]);
+  }
+  if (session.step === 'simple_category') {
+    if (!simpleSubcategories[choice]) return simplePrompt(phone, 'कृपया कामाचा प्रकार निवडा:', simpleCategories);
+    d.simple_category = choice;
+    session.step = 'simple_subcategory';
+    return simpleSubcategoryList(session);
+  }
+  if (session.step === 'simple_subcategory') {
+    const index = Number((choice.match(/simple_sub_(\d+)/) || [])[1]);
+    const options = simpleSubcategories[d.simple_category] || [];
+    if (!Number.isInteger(index) || !options[index]) return simpleSubcategoryList(session);
+    d.simple_subcategory = options[index];
+    session.step = session.role === 'farmer' ? 'simple_location' : 'simple_worker_location';
+    return sendWhatsApp(phone, session.role === 'farmer' ? 'काम कुठे आहे? गाव / तालुका लिहा.' : 'तुम्ही कुठे काम शोधत आहात? गाव / तालुका लिहा.');
+  }
+  if (session.step === 'simple_location' || session.step === 'simple_worker_location') {
+    d.location = input;
+    session.step = session.role === 'farmer' ? 'simple_date' : 'simple_worker_date';
+    return sendWhatsApp(phone, session.role === 'farmer' ? 'कामाची तारीख लिहा. उदा. २० ऑक्टोबर' : 'तुम्ही कामासाठी कधी उपलब्ध आहात? उदा. २० ऑक्टोबर');
+  }
+  if (session.step === 'simple_date' || session.step === 'simple_worker_date') {
+    d.date = input;
+    session.step = session.role === 'farmer' ? 'simple_wage' : 'simple_worker_wage';
+    return sendWhatsApp(phone, session.role === 'farmer' ? 'तुम्ही किती मजुरी देणार? उदा. ₹६०० प्रति दिवस किंवा ₹२५ प्रति क्रेट' : 'तुम्हाला किती मजुरी अपेक्षित आहे? उदा. ₹६०० प्रति दिवस किंवा ₹२५ प्रति क्रेट');
+  }
+  if (session.step === 'simple_wage' || session.step === 'simple_worker_wage') {
+    d.wage_text = input;
+    session.step = 'simple_confirm';
+    const roleText = session.role === 'farmer' ? 'कामगार शोधत आहे' : 'काम शोधत आहे';
+    await sendWhatsApp(phone, `तुमची माहिती:\n\n${roleText}\nकाम: ${d.simple_subcategory}\nठिकाण: ${d.location}\nतारीख: ${d.date}\nमजुरी: ${d.wage_text}\n\nही माहिती पाठवायची का?`);
+    return buttons(phone, 'कृपया निवडा:', [{ id: 'simple_confirm_yes', title: 'होय, पाठवा' }, { id: 'simple_confirm_no', title: 'पुन्हा सुरू करा' }]);
+  }
+  if (session.step === 'simple_confirm') {
+    if (choice === 'simple_confirm_no') { session.simple = false; resetSession(phone); return sendSimpleStart(phone); }
+    if (choice !== 'simple_confirm_yes') return buttons(phone, 'कृपया निवडा:', [{ id: 'simple_confirm_yes', title: 'होय, पाठवा' }, { id: 'simple_confirm_no', title: 'पुन्हा सुरू करा' }]);
+    try {
+      const payload = session.role === 'farmer'
+        ? { phone, name: 'WhatsApp user', village: d.location, taluka: d.location, jobType: d.simple_category, activities: [d.simple_subcategory], date: d.date, wageOffer: d.wage_text }
+        : { phone, name: 'WhatsApp user', village: d.location, taluka: d.location, skills: [d.simple_subcategory], preferredWork: d.simple_subcategory, availability: d.date, wageAsk: d.wage_text };
+      await backend(session.role === 'farmer' ? '/farmer/' : '/labour/', { method: 'POST', body: JSON.stringify(payload) });
+      session.simple = false;
+      return sendWhatsApp(phone, 'धन्यवाद! तुमची माहिती यशस्वीपणे नोंदवली आहे. योग्य काम किंवा कामगार मिळाल्यावर आम्ही तुम्हाला कळवू.');
+    } catch (error) {
+      return sendWhatsApp(phone, `माहिती नोंदवता आली नाही. कृपया पुन्हा प्रयत्न करा. (${error.message})`);
+    }
+  }
+  return false;
+}
+function sendSimpleStart(phone) {
+  const session = resetSession(phone);
+  session.simple = true;
+  session.step = 'simple_role';
+  return buttons(phone, 'नमस्कार! कामसेतूमध्ये स्वागत आहे.\n\nतुम्हाला काय हवे आहे?', [{ id: 'simple_worker', title: 'काम शोधत आहे' }, { id: 'simple_farmer', title: 'कामगार शोधत आहे' }]);
+}
+
 async function promptMenu(session) {
   const to = session.phone;
   if (!session.lang) return sendWhatsApp(to, `${languageText.en.welcome}\n\n${languageText.en.language}`);
@@ -346,7 +427,8 @@ export async function handleMessage(phone, message) {
   const session = getSession(phone);
   const input = valueFromMessage(message);
   const choice = normalizeChoice(input);
-  if (['menu', 'start', 'hi', 'hello', 'नमस्कार'].includes(choice)) { resetSession(phone); await loadCampaignStore(); const defaultFlow = campaignStore.flows.find(flow => flow.name === 'default_customer_flow'); if (defaultFlow) return startFlow(phone, defaultFlow.flow_id); return promptMenu(getSession(phone)); }
+  if (['menu', 'start', 'hi', 'hello', 'नमस्कार'].includes(choice)) return sendSimpleStart(phone);
+  if (session.simple) return handleSimpleMessage(phone, message);
   if (!session.lang) {
     session.lang = choice === '1' || choice.includes('मराठी') ? 'mr' : choice === '2' || choice.includes('हिंदी') ? 'hi' : choice === '3' || choice.includes('english') ? 'en' : null;
     if (!session.lang) return sendWhatsApp(phone, languageText.en.language);

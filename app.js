@@ -1,6 +1,6 @@
 const copy = {
   en: {eyebrow:'MADE FOR MAHARASHTRA',headline:'The right hands.<br><em>The right work.</em><br>Right nearby.',heroText:'A simple way for farmers to find dependable workers — and for workers to find fair work close to home.',findWorker:'Find workers',farmerSub:'I need hands for my farm',findWork:'Find work',workerSub:'I am looking for work',note:'No resumes. No middleman. Just local work.',ticker1:'Local work, local people',ticker2:'Clear wages, clear days',ticker3:'Call or WhatsApp',ticker4:'काम मिळेल. कामगार मिळतील.',howEyebrow:'HOW IT WORKS',howTitle:'Three simple steps.<br><em>काम सुरू.</em>',howText:'Choose your side, share the details and connect with the right person nearby.',step1Title:'1. Choose your side',step1Text:'Farmer: post work. Worker: share the work you can do.',step2Title:'2. See the best match',step2Text:'Check nearby people, skills, dates and wages.',step3Title:'3. Talk and confirm',step3Text:'Send a request, agree on the work and get started.',workEyebrow:'WORK THAT MOVES WITH THE SEASON',workTitle:'From picking to<br><em>planting.</em>',crop1:'Tomato picking',crop2:'Nursery work',crop3:'Grading & stacking',crop4:'Weeding & planting',crop5:'Pruning',crop6:'Your work',trustEyebrow:'BUILT FOR REAL LIFE',trustTitle:'No fancy words.<br><em>Just fair work.</em>',trustText:'Made for the phone in your pocket, the farm under your feet, and the language you speak at home.',trust1:'Marathi, Hindi & English',trust2:'Phone & WhatsApp friendly',trust3:'Built for villages first'},
-  mr: {eyebrow:'महाराष्ट्रासाठी बनलेलं',headline:'योग्य हात.<br><em>योग्य काम.</em><br>तुमच्या जवळ.',heroText:'शेतकऱ्यांना विश्वासू कामगार शोधण्याचा — आणि कामगारांना घराजवळ योग्य काम मिळवण्याचा सोपा मार्ग.',findWorker:'कामगार शोधा',farmerSub:'माझ्या शेतासाठी कामगार हवे',findWork:'काम शोधा',workerSub:'मला काम हवे आहे',note:'रेझ्युमे नाही. दलाल नाही. फक्त जवळचं काम.',ticker1:'स्थानिक काम, स्थानिक माणसं',ticker2:'स्पष्ट मजुरी, स्पष्ट दिवस',ticker3:'कॉल किंवा WhatsApp',ticker4:'काम मिळेल. कामगार मिळतील.',howEyebrow:'कसं काम करतं?',howTitle:'तीन सोप्या पायऱ्या.<br><em>काम सुरू.</em>',howText:'तुमची बाजू निवडा, माहिती द्या आणि जवळच्या योग्य व्यक्तीशी जोडा.',step1Title:'१. तुमची बाजू निवडा',step1Text:'शेतकरी: काम पोस्ट करा. कामगार: तुम्ही करू शकणारे काम सांगा.',step2Title:'२. योग्य जुळणी पहा',step2Text:'जवळचे लोक, कौशल्य, तारीख आणि मजुरी पहा.',step3Title:'३. बोला आणि ठरवा',step3Text:'विनंती पाठवा, काम ठरवा आणि सुरुवात करा.',workEyebrow:'हंगामासोबत बदलणारं काम',workTitle:'तोडणीपासून<br><em>लागवडीपर्यंत.</em>',crop1:'टोमॅटो तोडणी',crop2:'रोपवाटिका काम',crop3:'प्रतवारी आणि रचणी',crop4:'खुरपणी आणि लागवड',crop5:'छाटणी',crop6:'तुमचं काम',trustEyebrow:'खऱ्या आयुष्यासाठी',trustTitle:'अवघड शब्द नाही.<br><em>फक्त योग्य काम.</em>',trustText:'तुमच्या खिशातल्या फोनसाठी, पायाखालच्या शेतासाठी आणि घरात बोलल्या जाणाऱ्या भाषेसाठी बनलेलं.',trust1:'मराठी, हिंदी आणि इंग्रजी',trust2:'फोन आणि WhatsApp सोबत सोपं',trust3:'गावांसाठी आधी बनलेलं'},
+  mr: {eyebrow:'महाराष्ट्रासाठी बनलेलं',headline:'योग्य हात.<br><em>योग्य काम.</em><br>तुमच्या जवळ.',heroText:'शेतकऱ्यांना विश्वासू कामगार शोधण्याचा — आणि कामगारांना घराजवळ योग्य काम मिळवण्याचा सोपा मार्ग.',findWorker:'कामगार शोधा',farmerSub:'माझ्या शेतासाठी कामगार हवे',findWork:'काम शोधा',workerSub:'मला काम हवे आहे',note:'रेझ्युमे नाही. दलाल नाही. फक्त जवळचं काम.',ticker1:'स्थानिक काम, स्थानिक माणसं',ticker2:'स्पष्ट मजुरी, स्पष्ट दिवस',ticker3:'कॉल किंवा WhatsApp',ticker4:'काम मिळेल. कामगार मिळतील.',howEyebrow:'कसं काम करतं?',howTitle:'तीन सोप्या पायऱ्या.<br><em>काम सुरू.</em>',howText:'तुमची बाजू निवडा, माहिती द्या आणि जवळच्या योग्य व्यक्तीशी जोडा.',step1Title:'१. तुमची बाजू निवडा',step1Text:'शेतकरी: काम पोस्ट करा. कामगार: तुम्ही करू शकणारे काम सांगा.',step2Title:'२. योग्य जुळणी पहा',step2Text:'जवळचे लोक, कौशल्य, तारीख आणि मजुरी पहा.',step3Title:'३. बोला आणि ठरवा',step3Text:'विनंती पाठवा, काम ठरवा आणि सुरुवात करा.',workEyebrow:'हंगामासोबत बदलणारं काम',workTitle:'लागवडीपासून<br><em>तोडणीपर्यंत.</em>',crop1:'टोमॅटो तोडणी',crop2:'रोपवाटिका काम',crop3:'प्रतवारी आणि रचणी',crop4:'खुरपणी आणि लागवड',crop5:'छाटणी',crop6:'तुमचं काम',trustEyebrow:'खऱ्या आयुष्यासाठी',trustTitle:'अवघड शब्द नाही.<br><em>फक्त योग्य काम.</em>',trustText:'तुमच्या खिशातल्या फोनसाठी, पायाखालच्या शेतासाठी आणि घरात बोलल्या जाणाऱ्या भाषेसाठी बनलेलं.',trust1:'मराठी, हिंदी आणि इंग्रजी',trust2:'फोन आणि WhatsApp सोबत सोपं',trust3:'गावांसाठी आधी बनलेलं'},
   hi: {eyebrow:'महाराष्ट्र के लिए बना',headline:'सही हाथ।<br><em>सही काम।</em><br>आपके पास।',heroText:'किसानों के लिए भरोसेमंद मज़दूर ढूँढने का — और मज़दूरों के लिए घर के पास सही काम पाने का आसान तरीका.',findWorker:'मज़दूर खोजें',farmerSub:'मेरे खेत के लिए मज़दूर चाहिए',findWork:'काम खोजें',workerSub:'मुझे काम चाहिए',note:'रिज़्यूमे नहीं। बिचौलिया नहीं। बस पास का काम.',ticker1:'स्थानीय काम, स्थानीय लोग',ticker2:'साफ़ मज़दूरी, साफ़ दिन',ticker3:'कॉल या WhatsApp',ticker4:'काम मिलेगा। मज़दूर मिलेंगे।',howEyebrow:'कैसे काम करता है',howTitle:'तीन आसान कदम।<br><em>काम शुरू.</em>',howText:'अपनी भूमिका चुनें, जानकारी दें और पास के सही व्यक्ति से जुड़ें.',step1Title:'१. अपनी भूमिका चुनें',step1Text:'किसान: काम पोस्ट करें. मज़दूर: अपना काम और कौशल बताएं.',step2Title:'२. सही मैच देखें',step2Text:'पास के लोग, कौशल, तारीख और मज़दूरी देखें.',step3Title:'३. बात करके तय करें',step3Text:'अनुरोध भेजें, काम तय करें और शुरुआत करें.',workEyebrow:'मौसम के साथ बदलता काम',workTitle:'तोड़ने से लेकर<br><em>बोने तक.</em>',crop1:'टमाटर तोड़ना',crop2:'नर्सरी का काम',crop3:'छँटाई और ढेर लगाना',crop4:'निराई और बुवाई',crop5:'कटाई-छँटाई',crop6:'आपका काम',trustEyebrow:'असली ज़िंदगी के लिए बना',trustTitle:'भारी बातें नहीं।<br><em>बस सही काम.</em>',trustText:'आपकी जेब के फोन, आपके खेत और घर में बोली जाने वाली भाषा के लिए बनाया गया.',trust1:'मराठी, हिंदी और अंग्रेज़ी',trust2:'फोन और WhatsApp के लिए आसान',trust3:'गाँवों को ध्यान में रखकर बनाया'}
 };
 
@@ -104,18 +104,31 @@ const displaySkills = skills => Array.isArray(skills) && skills.length ? skills.
 const jobMatchUrl = job => `/farmer/jobs/${encodeURIComponent(job.apiJobId)}/matches/?limit=3`;
 const workerJobsUrl = worker => `/labour/${encodeURIComponent(worker.labour_id || worker.id)}/jobs/?limit=3`;
 const matchingSkillsParam = skills => Array.isArray(skills) ? skills.filter(Boolean).join(',') : '';
+const normaliseMatchText = value => String(value || '').toLowerCase().replace(/[,_/-]+/g,' ').replace(/\s+/g,' ').trim();
+const skillOverlap = (left=[], right=[]) => {
+  const a=(Array.isArray(left)?left:[]).map(normaliseMatchText).filter(Boolean);
+  const b=(Array.isArray(right)?right:[]).map(normaliseMatchText).filter(Boolean);
+  return a.filter(skill=>b.some(other=>skill===other || skill.includes(other) || other.includes(skill))).length;
+};
+const samePlace = (a,b,level='village') => {
+  const av=normaliseMatchText(a?.[level]), bv=normaliseMatchText(b?.[level]);
+  return Boolean(av && bv && av===bv);
+};
+const frontendWorkerMatches = job => (remoteExploreData?.workers||[]).map(worker=>({...worker, matched_skills:skillOverlap(job.skills,worker.skills)})).filter(worker=>worker.matched_skills>0 && (samePlace(job,worker,'village') || samePlace(job,worker,'taluka'))).sort((a,b)=>b.matched_skills-a.matched_skills);
+const frontendJobMatches = worker => (remoteExploreData?.jobs||[]).map(job=>({...job, matched_skills:skillOverlap(worker.skills,job.skills)})).filter(job=>job.matched_skills>0 && (samePlace(worker,job,'village') || samePlace(worker,job,'taluka'))).sort((a,b)=>b.matched_skills-a.matched_skills);
 const loadJobMatches = async job => {
-  const exact=await apiGet(jobMatchUrl(job));
-  if ((exact.total||exact.matches?.length||0)>0 || !job.location) return exact;
-  const params=new URLSearchParams({limit:'3'}); const taluka=job.location.split(',')[1]?.trim();
-  if (taluka) params.set('taluka',taluka); if (matchingSkillsParam(job.skills)) params.set('skill',matchingSkillsParam(job.skills));
-  const nearby=await apiGet(`/workers/explore/?${params}`); return {total:nearby.total||0,matches:nearby.workers||[],nearbyFallback:true};
+  let exact={total:0,matches:[]};
+  try { exact=await apiGet(jobMatchUrl(job)); } catch {}
+  const local=frontendWorkerMatches(job);
+  const merged=[...(exact.matches||[]),...local].filter((item,index,array)=>index===array.findIndex(other=>String(other.labour_id||other.id)===String(item.labour_id||item.id)));
+  return {total:Math.max(exact.total||0,merged.length),matches:merged,nearbyFallback:!exact.matches?.length && local.length>0};
 };
 const loadWorkerMatches = async worker => {
-  const exact=await apiGet(workerJobsUrl(worker));
-  if ((exact.total||exact.jobs?.length||0)>0 || !worker.taluka) return exact;
-  const params=new URLSearchParams({limit:'3',taluka:worker.taluka}); if (matchingSkillsParam(worker.skills)) params.set('skill',matchingSkillsParam(worker.skills));
-  const nearby=await apiGet(`/jobs/explore/?${params}`); return {total:nearby.total||0,jobs:nearby.jobs||[],nearbyFallback:true};
+  let exact={total:0,jobs:[]};
+  try { exact=await apiGet(workerJobsUrl(worker)); } catch {}
+  const local=frontendJobMatches(worker);
+  const merged=[...(exact.jobs||[]),...local].filter((item,index,array)=>index===array.findIndex(other=>String(other.job_id||other.id)===String(item.job_id||item.id)));
+  return {total:Math.max(exact.total||0,merged.length),jobs:merged,nearbyFallback:!exact.jobs?.length && local.length>0};
 };
 const renderJobMatchPreview = (job, state='loading') => {
   const node=document.querySelector(`[data-match-preview="job-${job.apiJobId}"]`); if(!node)return;
@@ -147,8 +160,8 @@ const loadRemoteExplore = async view => {
   }
   try {
     const [jobsResponse, workersResponse] = await Promise.all([
-      apiGet('/jobs/explore/?limit=20&sort=date'),
-      apiGet('/workers/explore/?limit=20&sort=newest')
+      apiGet('/jobs/explore/?limit=200&sort=date'),
+      apiGet('/workers/explore/?limit=200&sort=newest')
     ]);
     const jobs = (Array.isArray(jobsResponse.jobs) ? jobsResponse.jobs : []).map(job => ({
       id: `api-job-${job.job_id}`,
@@ -157,6 +170,9 @@ const loadRemoteExplore = async view => {
       name: job.farmer_name || 'Local farmer',
       title: job.job_type || job.category || 'Work requirement',
       location: [job.village, job.taluka, job.district].filter(Boolean).join(', '),
+      village: job.village,
+      taluka: job.taluka,
+      district: job.district,
       workers: job.workers_needed,
       wageOffer: job.wage_offered,
       neededDate: job.work_date,
@@ -231,7 +247,7 @@ document.querySelector('#explore-view').addEventListener('click',e=>{const btn=e
 document.querySelector('#workers-view').addEventListener('click',e=>{const btn=e.target.closest('[data-worker-id]');if(!btn)return;const worker=(remoteExploreData?.workers||[]).find(item=>String(item.id||item.labour_id)===String(btn.dataset.workerId));if(!worker)return;currentRole='farmer';openWorkerProfile(worker);});
 document.querySelector('#profile-view').addEventListener('click',e=>{const workerBtn=e.target.closest('[data-match-worker-id]');if(workerBtn){currentRole='farmer';currentJob={title:'Work requirement',location:profileData?.location||'Nearby',rate:Number(workerBtn.dataset.matchWorkerWage)||700,skills:[]};openOffer('worker-direct');return;}const jobBtn=e.target.closest('[data-match-job-id]');if(jobBtn){currentRole='worker';currentJob={title:jobBtn.dataset.matchJobTitle||'Nearby work',location:profileData?.location||'Nearby',rate:Number(jobBtn.dataset.matchJobWage)||700,skills:profileData?.skills||[]};openOffer('worker-direct');}});
 document.querySelector('#profile-view').addEventListener('click',e=>{const btn=e.target.closest('[data-match]');if(!btn)return;const action=btn.dataset.match;if(action==='bid'){openOffer('tomato');}if(action==='accept'){bookingState='worker-review';renderProfile(profileData||{role:'farmer'});}if(action==='worker-accept'){bookingState='farmer-wallet';renderProfile(profileData||{role:'worker'});}if(action==='wallet'){bookingState='confirmed';renderProfile(profileData||{role:'farmer'});}});
-document.querySelector('#profile-view').addEventListener('click',async e=>{const btn=e.target.closest('[data-api-job-id]');if(!btn)return;const panel=document.querySelector('#match-panel');panel.innerHTML='<div class="match-card"><span class="job-pill">● Loading matches…</span></div>';try{const data=await apiGet(`/farmer/jobs/${encodeURIComponent(btn.dataset.apiJobId)}/matches/?limit=20`);panel.innerHTML=data.matches?.length?`<div class="match-card"><div><span class="job-pill">● ${ui('smartMatch')}</span><h4>${data.total} matching workers</h4>${data.matches.slice(0,6).map(match=>`<p class="remote-match"><strong>${match.name}</strong> · ${match.taluka||match.village||ui('nearby')} · ₹${match.expected_wage||'—'} / day · ${(match.skills||[]).join(', ')}</p>`).join('')}</div></div>`:'<div class="match-card"><span>No matching workers found yet.</span></div>';}catch(error){panel.innerHTML=`<div class="match-card"><span>${error.message}</span></div>`;}});
+document.querySelector('#profile-view').addEventListener('click',async e=>{const btn=e.target.closest('[data-api-job-id]');if(!btn)return;const panel=document.querySelector('#match-panel');panel.innerHTML='<div class="match-card"><span class="job-pill">● Loading matches…</span></div>';try{const job={apiJobId:btn.dataset.apiJobId,job_id:btn.dataset.apiJobId,village:profileData?.village,taluka:profileData?.taluka,location:profileData?.location,skills:profileData?.skills||[]};const data=await loadJobMatches(job);panel.innerHTML=renderMatchWorkerCards(data.matches||[],job,data.total||data.matches?.length,data.nearbyFallback);}catch(error){panel.innerHTML=`<div class="match-card"><span>${escapeHtml(error.message)}</span></div>`;}});
 document.querySelector('#offer-form').addEventListener('submit',e=>{e.preventDefault();currentJob=currentJob||jobs.tomato;const offer=Number(new FormData(e.currentTarget).get('offer'))||currentJob.rate;closeOffer();bookingState=currentRole==='worker'?'worker-sent':'farmer-review';if(!profileData)profileData={name:'Worker profile',location:currentJob.location,role:'worker'};profileData.offer=offer;renderProfile(profileData);setProfileWage(profileData);});
 document.querySelector('.offer-close').addEventListener('click',closeOffer); offerModal.addEventListener('click',e=>{if(e.target===offerModal)closeOffer()});
 document.querySelectorAll('[data-back-home]').forEach(btn=>btn.addEventListener('click',showHome));

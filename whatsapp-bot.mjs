@@ -356,7 +356,7 @@ const server = createServer(async (request, response) => {
       }
       return;
     }
-    if (request.method === 'GET' && url.pathname === '/whatsapp/ops') { response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); response.end(operationsHtml()); return; }
+    if (request.method === 'GET' && (url.pathname === '/whatsapp/ops' || url.pathname === '/whatsapp/ops/')) { response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); response.end(operationsHtml()); return; }
     if (request.method === 'GET' && url.pathname === '/whatsapp/ops/builder') { response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); response.end(builderHtml()); return; }
     if (url.pathname.startsWith('/whatsapp/ops')) {
       if (request.method === 'GET' && url.pathname === '/whatsapp/ops/templates') { const value = await listTemplates(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }

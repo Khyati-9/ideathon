@@ -114,12 +114,32 @@ const languageText = {
   }
 };
 
-const skills = ['Tomato picking', 'Onion harvesting', 'Grape harvesting', 'Planting', 'Weeding', 'Spraying', 'Packing / warehouse', 'Loading / unloading'];
+const skills = ['Tomato picking', 'Onion harvesting', 'Grape harvesting', 'Pomegranate picking', 'Planting', 'Weeding', 'Spraying', 'Nursery work', 'Packing / warehouse', 'Loading / unloading', 'Grading & stacking', 'Construction helper', 'Mason helper', 'Digging'];
 const t = (session, key) => languageText[session.lang || 'en'][key] || languageText.en[key];
 const normalizeChoice = value => String(value || '').trim().toLowerCase();
 const numeric = value => Number(String(value || '').replace(/[^0-9.]/g, '')) || 0;
 const parseIndexes = (text, length) => String(text).split(/[,\s]+/).map(value => Number(value) - 1).filter(index => index >= 0 && index < length);
 const selectedSkills = (text, other) => [...new Set(parseIndexes(text, skills.length + 1).map(index => index === skills.length ? (other || 'Other') : skills[index]))];
+const selectionIndexes = text => {
+  const raw = String(text || '').trim();
+  const ids = [...raw.matchAll(/(?:activity|skill)[_-]?(\d+)/gi)].map(match => Number(match[1]));
+  return ids.length ? ids.map(index => index - 1) : parseIndexes(raw, skills.length + 1);
+};
+const activityItems = (kind, session) => {
+  const prefix = kind === 'skills' ? 'skill' : 'activity';
+  const labels = session.lang === 'mr'
+    ? ['टोमॅटो तोडणी', 'कांदा काढणी', 'द्राक्ष काढणी', 'डाळिंब तोडणी', 'लागवड', 'खुरपणी', 'फवारणी', 'रोपवाटिका काम', 'पॅकिंग / गोदाम', 'लोडिंग / अनलोडिंग', 'प्रतवारी आणि साठवण', 'बांधकाम मदतनीस', 'गवंडी मदतनीस', 'खोदकाम', 'इतर']
+    : session.lang === 'hi'
+      ? ['टमाटर तोड़ना', 'प्याज़ की कटाई', 'अंगूर की कटाई', 'अनार तोड़ना', 'रोपाई', 'निराई', 'छिड़काव', 'नर्सरी काम', 'पैकिंग / गोदाम', 'लोडिंग / अनलोडिंग', 'ग्रेडिंग और स्टैकिंग', 'निर्माण सहायक', 'राजमिस्त्री सहायक', 'खुदाई', 'अन्य']
+      : [...skills, 'Other work'];
+  return labels.map((title, index) => ({ id: `${prefix}_${index + 1}`, title, description: index === labels.length - 1 ? 'Write details next' : '' }));
+};
+const sendActivityPrompt = (session, kind, page = 0) => {
+  const prefix = kind === 'skills' ? 'skill' : 'activity';
+  const items = activityItems(kind, session);
+  const rows = page === 0 ? [...items.slice(0, 9), { id: `${prefix}_more`, title: session.lang === 'mr' ? 'अधिक पर्याय' : session.lang === 'hi' ? 'और विकल्प' : 'More options' }] : items.slice(9);
+  return list(session.phone, t(session, kind === 'skills' ? 'askSkills' : 'askActivities'), rows);
+};
 const units = ['daily', 'crate', 'acre', 'task'];
 
 function getSession(phone) {
@@ -351,8 +371,8 @@ export async function handleMessage(phone, message) {
   const next = async (field, value, nextStep, promptKey) => { d[field] = value; setStep(session, nextStep); return sendWhatsApp(phone, t(session, promptKey)); };
   if (session.step === 'farmer_name') return next('name', input, 'farmer_taluka', 'askTaluka');
   if (session.step === 'farmer_taluka') return next('taluka', input, 'farmer_village', 'askVillage');
-  if (session.step === 'farmer_village') return next('village', input, 'farmer_activities', 'askActivities');
-  if (session.step === 'farmer_activities') { const indexes = parseIndexes(input, skills.length + 1); if (!indexes.length) return sendWhatsApp(phone, t(session, 'askActivities')); d.activities = indexes.map(index => index === skills.length ? 'Other work' : skills[index]); if (indexes.includes(skills.length)) { setStep(session, 'farmer_other'); return sendWhatsApp(phone, t(session, 'askOther')); } setStep(session, 'farmer_date'); return sendWhatsApp(phone, t(session, 'askDate')); }
+  if (session.step === 'farmer_village') { d.village = input; setStep(session, 'farmer_activities'); return sendActivityPrompt(session, 'activities'); }
+  if (session.step === 'farmer_activities') { if (choice === 'activity_more') return sendActivityPrompt(session, 'activities', 1); const indexes = selectionIndexes(input); if (!indexes.length) return sendActivityPrompt(session, 'activities'); d.activities = indexes.map(index => index === skills.length ? 'Other work' : skills[index]).filter(Boolean); if (indexes.includes(skills.length)) { setStep(session, 'farmer_other'); return sendWhatsApp(phone, t(session, 'askOther')); } setStep(session, 'farmer_date'); return sendWhatsApp(phone, t(session, 'askDate')); }
   if (session.step === 'farmer_other') return next('other_work', input, 'farmer_date', 'askDate').then(() => { d.activities = [input]; });
   if (session.step === 'farmer_date') return next('date', input, 'farmer_count', 'askCount');
   if (session.step === 'farmer_count') return next('count', numeric(input), 'farmer_wage', 'askWage');
@@ -360,10 +380,10 @@ export async function handleMessage(phone, message) {
   if (session.step === 'farmer_unit') { d.payment_unit = units[Math.max(0, Math.min(3, numeric(input) - 1))] || 'daily'; setStep(session, 'farmer_confirm'); return sendWhatsApp(phone, t(session, 'confirm').replace('{summary}', summary(session))); }
   if (session.step === 'worker_name') return next('name', input, 'worker_taluka', 'askTaluka');
   if (session.step === 'worker_taluka') return next('taluka', input, 'worker_village', 'askVillage');
-  if (session.step === 'worker_village') return next('village', input, 'worker_type', 'askType');
+  if (session.step === 'worker_village') { d.village = input; setStep(session, 'worker_type'); return sendWhatsApp(phone, t(session, 'askType')); }
   if (session.step === 'worker_type') { d.type = choice === '2' || choice === 'team' ? 'team' : 'individual'; if (d.type === 'team') { setStep(session, 'worker_team_size'); return sendWhatsApp(phone, t(session, 'askTeamSize')); } setStep(session, 'worker_skills'); return sendWhatsApp(phone, t(session, 'askSkills')); }
   if (session.step === 'worker_team_size') return next('team_size', numeric(input), 'worker_skills', 'askSkills');
-  if (session.step === 'worker_skills') { const selected = selectedSkills(input); if (!selected.length) return sendWhatsApp(phone, t(session, 'askSkills')); d.skills = selected; if (selected.includes('Other')) { setStep(session, 'worker_other'); return sendWhatsApp(phone, t(session, 'askOther')); } setStep(session, 'worker_wage'); return sendWhatsApp(phone, t(session, 'askExpected')); }
+  if (session.step === 'worker_skills') { if (choice === 'skill_more') return sendActivityPrompt(session, 'skills', 1); const indexes = selectionIndexes(input); const selected = indexes.map(index => index === skills.length ? 'Other' : skills[index]).filter(Boolean); if (!selected.length) return sendActivityPrompt(session, 'skills'); d.skills = selected; if (selected.includes('Other')) { setStep(session, 'worker_other'); return sendWhatsApp(phone, t(session, 'askOther')); } setStep(session, 'worker_wage'); return sendWhatsApp(phone, t(session, 'askExpected')); }
   if (session.step === 'worker_other') { d.skills = [input]; setStep(session, 'worker_wage'); return sendWhatsApp(phone, t(session, 'askExpected')); }
   if (session.step === 'worker_wage') return next('wage', numeric(input), 'worker_unit', 'askUnit');
   if (session.step === 'worker_unit') { d.payment_unit = units[Math.max(0, Math.min(3, numeric(input) - 1))] || 'daily'; setStep(session, 'worker_availability'); return sendWhatsApp(phone, t(session, 'askAvailability')); }

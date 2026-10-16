@@ -159,11 +159,28 @@ const loadRemoteExplore = async view => {
     return;
   }
   try {
+    // The deployed API caps each page at 20 records. Fetch every page instead
+    // of assuming one large limit will return the complete dataset.
+    const fetchAll = async path => {
+      const pageSize = 20;
+      const all = [];
+      let offset = 0;
+      let total = 0;
+      do {
+        const response = await apiGet(`${path}${path.includes('?')?'&':'?'}limit=${pageSize}&offset=${offset}`);
+        const page = Array.isArray(response.jobs) ? response.jobs : (Array.isArray(response.workers) ? response.workers : []);
+        all.push(...page);
+        total = Number(response.total || all.length);
+        offset += page.length;
+        if (!page.length || offset >= total) break;
+      } while (offset < total);
+      return { total, items: all };
+    };
     const [jobsResponse, workersResponse] = await Promise.all([
-      apiGet('/jobs/explore/?limit=200&sort=date'),
-      apiGet('/workers/explore/?limit=200&sort=newest')
+      fetchAll('/jobs/explore/?sort=date'),
+      fetchAll('/workers/explore/?sort=newest')
     ]);
-    const jobs = (Array.isArray(jobsResponse.jobs) ? jobsResponse.jobs : []).map(job => ({
+    const jobs = jobsResponse.items.map(job => ({
       id: `api-job-${job.job_id}`,
       apiJobId: job.job_id,
       farmerId: job.farmer_id,
@@ -181,7 +198,7 @@ const loadRemoteExplore = async view => {
       status: job.offer_status,
       category: job.category
     }));
-    const workers = (Array.isArray(workersResponse.workers) ? workersResponse.workers : []).map(worker => ({
+    const workers = workersResponse.items.map(worker => ({
       ...worker,
       id: worker.labour_id,
       minWage: worker.expected_wage,

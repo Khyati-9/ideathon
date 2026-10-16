@@ -26,25 +26,24 @@ The only URL Meta needs to call is:
 https://kaamsetu.phala.work/whatsapp/webhook
 ```
 
-Developers use the separate protected API under `/whatsapp/admin`. Website users do not use these URLs. Every admin request must include either `Authorization: Bearer $WHATSAPP_ADMIN_TOKEN` or `X-Developer-Key: $WHATSAPP_ADMIN_TOKEN`.
+Developers use the separate backend-only API under `/whatsapp/ops`. These URLs are not linked from or exposed in the website UI.
 
 Configure these server-only variables:
 
 ```text
-WHATSAPP_ADMIN_TOKEN=<long-random-secret>
 WHATSAPP_BUSINESS_ACCOUNT_ID=<Meta WhatsApp Business Account ID>
 ```
 
 Admin endpoints:
 
-- `GET /whatsapp/admin/templates` — list Meta templates
-- `POST /whatsapp/admin/templates` — create/submit a template for approval
-- `POST /whatsapp/admin/campaigns` — create a campaign; use `"launch":true` to send immediately
-- `GET /whatsapp/admin/campaigns` — list campaigns and delivery totals
-- `GET /whatsapp/admin/campaigns/{id}/analytics` — delivery/reply analytics
-- `POST /whatsapp/admin/campaigns/{id}/send` — send a saved campaign
+- `GET /whatsapp/ops/templates` — list Meta templates
+- `POST /whatsapp/ops/templates` — create/submit a template for approval
+- `POST /whatsapp/ops/campaigns` — create a campaign; use `"launch":true` to send immediately
+- `GET /whatsapp/ops/campaigns` — list campaigns and delivery totals
+- `GET /whatsapp/ops/campaigns/{id}/analytics` — delivery/reply analytics
+- `POST /whatsapp/ops/campaigns/{id}/send` — send a saved campaign
 
-Never put `WHATSAPP_ADMIN_TOKEN`, access tokens, or the business account ID in frontend JavaScript.
+Never put access tokens or the business account ID in frontend JavaScript. URL-only separation is not authentication; add network protection later if this endpoint becomes internet-facing.
 
 Set `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN` and `BOT_DRY_RUN=false`. The template must already be approved in WhatsApp Manager and recipients must have opted in.
 

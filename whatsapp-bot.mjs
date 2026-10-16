@@ -323,7 +323,7 @@ export async function handleMessage(phone, message) {
   const session = getSession(phone);
   const input = valueFromMessage(message);
   const choice = normalizeChoice(input);
-  if (['menu', 'start', 'hi', 'hello', 'नमस्कार'].includes(choice)) { resetSession(phone); return promptMenu(getSession(phone)); }
+  if (['menu', 'start', 'hi', 'hello', 'नमस्कार'].includes(choice)) { resetSession(phone); await loadCampaignStore(); const defaultFlow = campaignStore.flows.find(flow => flow.name === 'default_customer_flow'); if (defaultFlow) return startFlow(phone, defaultFlow.flow_id); return promptMenu(getSession(phone)); }
   if (!session.lang) {
     session.lang = choice === '1' || choice.includes('मराठी') ? 'mr' : choice === '2' || choice.includes('हिंदी') ? 'hi' : choice === '3' || choice.includes('english') ? 'en' : null;
     if (!session.lang) return sendWhatsApp(phone, languageText.en.language);

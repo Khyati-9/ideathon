@@ -24,7 +24,7 @@ const campaignDataFile = process.env.CAMPAIGN_DATA_FILE || './data/whatsapp-camp
 
 const sessions = new Map();
 const processedMessageIds = new Set();
-let campaignStore = { campaigns: [], messages: [] };
+let campaignStore = { campaigns: [], messages: [], flows: [] };
 let campaignStoreReady;
 
 async function loadCampaignStore() {
@@ -34,6 +34,7 @@ async function loadCampaignStore() {
     catch { campaignStore = { campaigns: [], messages: [] }; }
     campaignStore.campaigns ||= [];
     campaignStore.messages ||= [];
+    campaignStore.flows ||= [];
     return campaignStore;
   })();
   return campaignStoreReady;
@@ -41,6 +42,31 @@ async function loadCampaignStore() {
 async function saveCampaignStore() {
   await mkdir(dirname(campaignDataFile), { recursive: true }).catch(() => {});
   await writeFile(campaignDataFile, JSON.stringify(campaignStore, null, 2));
+}
+async function saveFlow(input) {
+  await loadCampaignStore();
+  if (!input.name || !Array.isArray(input.nodes) || !input.nodes.length) throw new Error('Flow name and at least one node are required');
+  const flow = { flow_id: input.flow_id || randomUUID(), name: input.name, nodes: input.nodes, updated_at: isoNow() };
+  campaignStore.flows = campaignStore.flows.filter(item => item.flow_id !== flow.flow_id && item.name !== flow.name);
+  campaignStore.flows.unshift(flow); await saveCampaignStore(); return flow;
+}
+async function routeFlowButton(phone, message) {
+  const buttonId = message?.interactive?.button_reply?.id || message?.interactive?.list_reply?.id;
+  if (!buttonId) return false;
+  await loadCampaignStore();
+  for (const flow of campaignStore.flows) {
+    const node = flow.nodes.find(item => item.buttons?.some(button => button.id === buttonId));
+    const button = node?.buttons?.find(item => item.id === buttonId);
+    if (button?.next) {
+      const next = flow.nodes.find(item => item.id === button.next);
+      if (next) {
+        if (next.buttons?.length) await buttons(phone, next.text, next.buttons.map(item => ({ id: item.id, title: item.title })));
+        else await sendWhatsApp(phone, next.text);
+        return true;
+      }
+    }
+  }
+  return false;
 }
 const normalizePhone = value => String(value || '').replace(/\D/g, '').replace(/^0+/, '');
 const isoNow = () => new Date().toISOString();
@@ -165,6 +191,9 @@ function operationsHtml() {
 }
 function builderHtml() {
   return '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>KaamSetu Flow Builder</title><style>body{font:16px system-ui;max-width:900px;margin:auto;padding:24px;background:#f7f3e9;color:#123f31}.card{background:#fffdf7;border:1px solid #d9dfd4;border-radius:16px;padding:20px;margin:16px 0}input,textarea{box-sizing:border-box;width:100%;padding:11px;margin:6px 0 14px;border:1px solid #ccd6cb;border-radius:8px;font:inherit}textarea{min-height:110px}button{padding:11px 15px;border:0;border-radius:8px;background:#ff765b;font-weight:700}</style><h1>Flow builder</h1><p>Create the customer flow, button choices, and attach it to a campaign.</p><section class="card"><label>Flow name</label><input id="name" value="default_customer_flow"><label>Steps, one per line</label><textarea id="steps">Hi → Choose language\nChoose role\nCollect details\nShow matches</textarea><label>Buttons, one per line: button text → next step</label><textarea id="buttons">Looking for work → worker_flow\nLooking for workers → farmer_flow</textarea><button onclick="save()">Save flow</button><pre id="out"></pre></section><script>function save(){const v={name:name.value,steps:steps.value.split(/\\n/).filter(Boolean),buttons:buttons.value.split(/\\n/).filter(Boolean),saved_at:new Date().toISOString()};localStorage.setItem("kaamsetu-flow",JSON.stringify(v));out.textContent=JSON.stringify(v,null,2)}</script>';
+}
+function builderHtmlV2() {
+  return `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>KaamSetu Automation Flow Builder</title><style>body{font:16px system-ui;max-width:950px;margin:auto;padding:24px;background:#f7f3e9;color:#123f31}.card{background:#fffdf7;border:1px solid #d9dfd4;border-radius:16px;padding:20px;margin:16px 0}input,textarea{box-sizing:border-box;width:100%;padding:11px;margin:6px 0 12px;border:1px solid #ccd6cb;border-radius:8px;font:inherit}textarea{min-height:110px}button{padding:11px 15px;border:0;border-radius:8px;background:#ff765b;font-weight:700}.hint{color:#68766e}.node{border-left:5px solid #ff765b;padding-left:12px;margin:12px 0}</style><h1>Automation flow builder</h1><p class="hint">Each node is a WhatsApp message. Each button routes to the node ID written after the arrow.</p><section class="card"><label>Flow name</label><input id="n" value="worker_campaign_flow"><label>Nodes JSON</label><textarea id="j">[{"id":"welcome","text":"कामासाठी भटकंती बंद! आता थेट मोबाईलवर मिळवा काम!","buttons":[{"id":"start","title":"सुरू करा","next":"benefits"}]},{"id":"benefits","text":"आता तुमच्या मोबाईलवरूनच मिळवा रोज काम.\\n\\n• १००% मोफत नोंदणी\\n• तुमच्याच परिसरात / गावात काम\\n• वेळेवर आणि पूर्ण मजुरी","buttons":[{"id":"categories","title":"कामाचे प्रकार","next":"categories"}]},{"id":"categories","text":"कामाचे प्रकार / Categories\\nशेतीकाम | पॅकहाऊस | लोडिंग-अनलोडिंग | बांधकाम","buttons":[{"id":"contact","title":"WhatsApp करा","next":"contact"}]},{"id":"contact","text":"आजच मिस्ड कॉल द्या किंवा WhatsApp करा: 📞 तुमचा नंबर येथे टाका","buttons":[]}]</textarea><button onclick="save()">Save automation flow</button><pre id="o"></pre></section><script>async function save(){try{const v=JSON.parse(j.value);const r=await fetch('/whatsapp/ops/flows',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:n.value,nodes:v})});const x=await r.json();o.textContent=JSON.stringify(x,null,2)}catch(e){o.textContent=e.message}}</script>`;
 }
 function operationsHtmlV2() {
   return `<!doctype html>
@@ -364,15 +393,17 @@ const server = createServer(async (request, response) => {
       const payload = JSON.parse(raw);
       for (const item of extractEvents(payload)) {
         if (item.kind === 'status') handleStatusUpdate(item.status).catch(error => console.error('status update error', error));
-        else markCampaignReply(item.phone, item.message).then(() => handleMessage(item.phone, item.message)).catch(error => console.error('bot message error', error));
+        else markCampaignReply(item.phone, item.message).then(async () => { if (!(await routeFlowButton(item.phone, item.message))) await handleMessage(item.phone, item.message); }).catch(error => console.error('bot message error', error));
       }
       return;
     }
     if (request.method === 'GET' && (url.pathname === '/whatsapp/ops' || url.pathname === '/whatsapp/ops/')) { response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); response.end(operationsHtmlV2()); return; }
-    if (request.method === 'GET' && url.pathname === '/whatsapp/ops/builder') { response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); response.end(builderHtml()); return; }
+    if (request.method === 'GET' && url.pathname === '/whatsapp/ops/builder') { response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); response.end(builderHtmlV2()); return; }
     if (url.pathname.startsWith('/whatsapp/ops')) {
       if (request.method === 'GET' && url.pathname === '/whatsapp/ops/templates') { const value = await listTemplates(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
       if (request.method === 'POST' && url.pathname === '/whatsapp/ops/templates') { const value = await createTemplate(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
+      if (request.method === 'POST' && url.pathname === '/whatsapp/ops/flows') { const value = await saveFlow(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
+      if (request.method === 'GET' && url.pathname === '/whatsapp/ops/flows') { await loadCampaignStore(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ flows: campaignStore.flows })); return; }
       if (request.method === 'POST' && url.pathname === '/whatsapp/ops/campaigns') { const value = await createCampaign(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
       if (request.method === 'GET' && url.pathname === '/whatsapp/ops/campaigns') { await loadCampaignStore(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ campaigns: campaignStore.campaigns.map(campaignSummary) })); return; }
       const adminCampaign = url.pathname.match(/^\/whatsapp\/ops\/campaigns\/([^/]+)(?:\/(send|analytics))?$/);

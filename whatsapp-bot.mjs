@@ -18,6 +18,8 @@ const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
 const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
 const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'change-this-verify-token';
 const appSecret = process.env.WHATSAPP_APP_SECRET || '';
+const adminToken = process.env.WHATSAPP_ADMIN_TOKEN || '';
+const businessAccountId = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '';
 const dryRun = process.env.BOT_DRY_RUN === 'true' || !phoneNumberId || !accessToken;
 const campaignDataFile = process.env.CAMPAIGN_DATA_FILE || './data/whatsapp-campaigns.json';
 
@@ -140,6 +142,29 @@ async function sendTemplate(to, templateName, language = 'en_US', components = [
   const value = await response.json();
   if (!response.ok) throw new Error(value.error?.message || 'WhatsApp template send failed');
   return value;
+}
+function adminAuthorized(request) {
+  if (!adminToken) return false;
+  const provided = request.headers.authorization?.replace(/^Bearer\s+/i, '') || request.headers['x-developer-key'];
+  return provided === adminToken;
+}
+async function graphRequest(path, options = {}) {
+  const response = await fetch(`https://graph.facebook.com/${graphVersion}/${path}`, {
+    ...options,
+    headers: { authorization: `Bearer ${accessToken}`, 'content-type': 'application/json', ...(options.headers || {}) }
+  });
+  const value = await response.json();
+  if (!response.ok) throw new Error(value.error?.message || `Meta Graph API returned ${response.status}`);
+  return value;
+}
+async function createTemplate(input) {
+  if (!businessAccountId) throw new Error('WHATSAPP_BUSINESS_ACCOUNT_ID is not configured');
+  if (!input.name || !input.language || !input.category) throw new Error('name, language and category are required');
+  return graphRequest(`${businessAccountId}/message_templates`, { method: 'POST', body: JSON.stringify({ name: input.name, language: input.language, category: input.category, components: input.components || [] }) });
+}
+async function listTemplates() {
+  if (!businessAccountId) throw new Error('WHATSAPP_BUSINESS_ACCOUNT_ID is not configured');
+  return graphRequest(`${businessAccountId}/message_templates?limit=100`);
 }
 function campaignSummary(campaign) {
   return { ...campaign, messages: campaignStore.messages.filter(message => message.campaign_id === campaign.campaign_id) };
@@ -331,14 +356,32 @@ const server = createServer(async (request, response) => {
       }
       return;
     }
+    if (url.pathname.startsWith('/whatsapp/admin')) {
+      if (!adminAuthorized(request)) { response.writeHead(adminToken ? 401 : 503, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: adminToken ? 'Developer authentication required' : 'WHATSAPP_ADMIN_TOKEN is not configured' })); return; }
+      if (request.method === 'GET' && url.pathname === '/whatsapp/admin/templates') { const value = await listTemplates(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
+      if (request.method === 'POST' && url.pathname === '/whatsapp/admin/templates') { const value = await createTemplate(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
+      if (request.method === 'POST' && url.pathname === '/whatsapp/admin/campaigns') { const value = await createCampaign(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
+      if (request.method === 'GET' && url.pathname === '/whatsapp/admin/campaigns') { await loadCampaignStore(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ campaigns: campaignStore.campaigns.map(campaignSummary) })); return; }
+      const adminCampaign = url.pathname.match(/^\/whatsapp\/admin\/campaigns\/([^/]+)(?:\/(send|analytics))?$/);
+      if (adminCampaign) {
+        await loadCampaignStore(); const campaign = campaignStore.campaigns.find(item => item.campaign_id === adminCampaign[1]);
+        if (!campaign) { response.writeHead(404); response.end('Campaign not found'); return; }
+        if (request.method === 'POST' && adminCampaign[2] === 'send') { const value = await launchCampaign(campaign.campaign_id); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
+        if (request.method === 'GET' && (!adminCampaign[2] || adminCampaign[2] === 'analytics')) { response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(campaignSummary(campaign))); return; }
+      }
+      response.writeHead(404); response.end('Not found'); return;
+    }
     if (request.method === 'POST' && url.pathname === '/whatsapp/campaigns') {
+      if (!adminAuthorized(request)) { response.writeHead(adminToken ? 401 : 503, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: adminToken ? 'Developer authentication required' : 'WHATSAPP_ADMIN_TOKEN is not configured' })); return; }
       const value = await createCampaign(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return;
     }
     if (request.method === 'GET' && url.pathname === '/whatsapp/campaigns') {
+      if (!adminAuthorized(request)) { response.writeHead(adminToken ? 401 : 503); response.end('Developer authentication required'); return; }
       await loadCampaignStore(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ campaigns: campaignStore.campaigns.map(campaignSummary) })); return;
     }
     const campaignMatch = url.pathname.match(/^\/whatsapp\/campaigns\/([^/]+)(?:\/(send|analytics))?$/);
     if (campaignMatch) {
+      if (!adminAuthorized(request)) { response.writeHead(adminToken ? 401 : 503); response.end('Developer authentication required'); return; }
       const campaignId = campaignMatch[1]; await loadCampaignStore();
       const campaign = campaignStore.campaigns.find(item => item.campaign_id === campaignId); if (!campaign) { response.writeHead(404); response.end('Campaign not found'); return; }
       if (request.method === 'POST' && campaignMatch[2] === 'send') { const value = await launchCampaign(campaignId); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }

@@ -1,4 +1,6 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { createServer } from 'node:http';
 
 /*
@@ -17,9 +19,30 @@ const accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
 const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'change-this-verify-token';
 const appSecret = process.env.WHATSAPP_APP_SECRET || '';
 const dryRun = process.env.BOT_DRY_RUN === 'true' || !phoneNumberId || !accessToken;
+const campaignDataFile = process.env.CAMPAIGN_DATA_FILE || './data/whatsapp-campaigns.json';
 
 const sessions = new Map();
 const processedMessageIds = new Set();
+let campaignStore = { campaigns: [], messages: [] };
+let campaignStoreReady;
+
+async function loadCampaignStore() {
+  if (campaignStoreReady) return campaignStoreReady;
+  campaignStoreReady = (async () => {
+    try { campaignStore = JSON.parse(await readFile(campaignDataFile, 'utf8')); }
+    catch { campaignStore = { campaigns: [], messages: [] }; }
+    campaignStore.campaigns ||= [];
+    campaignStore.messages ||= [];
+    return campaignStore;
+  })();
+  return campaignStoreReady;
+}
+async function saveCampaignStore() {
+  await mkdir(dirname(campaignDataFile), { recursive: true }).catch(() => {});
+  await writeFile(campaignDataFile, JSON.stringify(campaignStore, null, 2));
+}
+const normalizePhone = value => String(value || '').replace(/\D/g, '').replace(/^0+/, '');
+const isoNow = () => new Date().toISOString();
 const body = request => new Promise((resolve, reject) => {
   const chunks = [];
   request.on('data', chunk => chunks.push(chunk));
@@ -106,6 +129,80 @@ async function findMatches(session) {
   }
   const jobs = await backend(`/jobs/explore/?limit=5&taluka=${encodeURIComponent(d.taluka)}&skill=${encodeURIComponent((d.skills || []).join(','))}`);
   return (jobs.jobs || []).map(job => `${job.job_type || job.category || 'Work'} · ${job.village || job.taluka || d.taluka}\nDate: ${job.work_date || '—'} · ₹${job.wage_offered || '—'}/${job.payment_method || 'day'}\nReply BID ${job.job_id} to send your bid.`);
+}
+
+async function sendTemplate(to, templateName, language = 'en_US', components = []) {
+  if (dryRun) return { dryRun: true, messages: [{ id: `dryrun.${randomUUID()}` }] };
+  const response = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
+    method: 'POST', headers: { authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ messaging_product: 'whatsapp', to: normalizePhone(to), type: 'template', template: { name: templateName, language: { code: language }, ...(components.length ? { components } : {}) } })
+  });
+  const value = await response.json();
+  if (!response.ok) throw new Error(value.error?.message || 'WhatsApp template send failed');
+  return value;
+}
+function campaignSummary(campaign) {
+  return { ...campaign, messages: campaignStore.messages.filter(message => message.campaign_id === campaign.campaign_id) };
+}
+async function createCampaign(input) {
+  await loadCampaignStore();
+  const recipients = [...new Set((input.recipients || []).map(normalizePhone).filter(value => value.length >= 10))];
+  if (!input.name || !input.template_name || !recipients.length) throw new Error('name, template_name and at least one recipient are required');
+  const campaign = { campaign_id: randomUUID(), name: input.name, template_name: input.template_name, language: input.language || 'en_US', components: input.components || [], recipients, status: 'draft', total: recipients.length, sent: 0, delivered: 0, read: 0, failed: 0, replied: 0, created_at: isoNow() };
+  campaignStore.campaigns.unshift(campaign);
+  await saveCampaignStore();
+  if (input.launch) await launchCampaign(campaign.campaign_id);
+  return campaignSummary(campaign);
+}
+async function launchCampaign(campaignId) {
+  await loadCampaignStore();
+  const campaign = campaignStore.campaigns.find(item => item.campaign_id === campaignId);
+  if (!campaign) throw new Error('Campaign not found');
+  campaign.status = 'sending'; campaign.started_at = isoNow(); await saveCampaignStore();
+  for (const phone of campaign.recipients) {
+    try {
+      const result = await sendTemplate(phone, campaign.template_name, campaign.language, campaign.components);
+      const wamid = result.messages?.[0]?.id || `local.${randomUUID()}`;
+      campaignStore.messages.push({ message_id: randomUUID(), campaign_id: campaignId, phone, wamid, status: 'sent', sent_at: isoNow(), replied: false });
+      campaign.sent += 1;
+    } catch (error) {
+      campaignStore.messages.push({ message_id: randomUUID(), campaign_id: campaignId, phone, status: 'failed', error: error.message, failed_at: isoNow(), replied: false });
+      campaign.failed += 1;
+    }
+    await saveCampaignStore();
+  }
+  campaign.status = 'completed'; campaign.completed_at = isoNow(); await saveCampaignStore();
+  return campaignSummary(campaign);
+}
+const statusRank = { sent: 1, delivered: 2, read: 3, failed: 0 };
+async function handleStatusUpdate(status) {
+  await loadCampaignStore();
+  const message = campaignStore.messages.find(item => item.wamid === status.id);
+  if (!message) return;
+  const next = status.status;
+  if (next !== 'failed' && statusRank[next] < (statusRank[message.status] || 0)) return;
+  message.status = next;
+  message[`${next}_at`] = isoNow();
+  if (next === 'failed') message.error = status.errors?.[0]?.title || status.errors?.[0]?.message || 'Delivery failed';
+  const campaign = campaignStore.campaigns.find(item => item.campaign_id === message.campaign_id);
+  if (campaign) {
+    const messages = campaignStore.messages.filter(item => item.campaign_id === campaign.campaign_id);
+    campaign.sent = messages.filter(item => ['sent', 'delivered', 'read'].includes(item.status)).length;
+    campaign.delivered = messages.filter(item => ['delivered', 'read'].includes(item.status)).length;
+    campaign.read = messages.filter(item => item.status === 'read').length;
+    campaign.failed = messages.filter(item => item.status === 'failed').length;
+  }
+  await saveCampaignStore();
+}
+async function markCampaignReply(phone, message) {
+  await loadCampaignStore();
+  const contextId = message.context?.id;
+  const candidate = campaignStore.messages.filter(item => item.phone === normalizePhone(phone) && (contextId ? item.wamid === contextId : true)).sort((a, b) => String(b.sent_at).localeCompare(String(a.sent_at)))[0];
+  if (!candidate || candidate.replied) return;
+  candidate.replied = true; candidate.last_inbound_at = isoNow();
+  const campaign = campaignStore.campaigns.find(item => item.campaign_id === candidate.campaign_id);
+  if (campaign) campaign.replied = campaignStore.messages.filter(item => item.campaign_id === campaign.campaign_id && item.replied).length;
+  await saveCampaignStore();
 }
 
 async function sendWhatsApp(to, message, options = {}) {
@@ -207,6 +304,15 @@ export function validSignature(request, raw) {
 export function extractMessages(payload) {
   return (payload.entry || []).flatMap(entry => (entry.changes || []).flatMap(change => (change.value?.messages || []).map(message => ({ phone: message.from, message }))));
 }
+export function extractEvents(payload) {
+  return (payload.entry || []).flatMap(entry => (entry.changes || []).flatMap(change => {
+    const value = change.value || {};
+    return [
+      ...(value.messages || []).map(message => ({ kind: 'message', phone: message.from, message })),
+      ...(value.statuses || []).map(status => ({ kind: 'status', status }))
+    ];
+  }));
+}
 
 const server = createServer(async (request, response) => {
   try {
@@ -218,12 +324,30 @@ const server = createServer(async (request, response) => {
     if (request.method === 'POST' && url.pathname === '/whatsapp/webhook') {
       const raw = await body(request); if (!validSignature(request, raw)) { response.writeHead(401); response.end('Invalid signature'); return; }
       response.writeHead(200, { 'content-type': 'application/json' }); response.end('{"ok":true}');
-      const payload = JSON.parse(raw); for (const item of extractMessages(payload)) handleMessage(item.phone, item.message).catch(error => console.error('bot message error', error)); return;
+      const payload = JSON.parse(raw);
+      for (const item of extractEvents(payload)) {
+        if (item.kind === 'status') handleStatusUpdate(item.status).catch(error => console.error('status update error', error));
+        else markCampaignReply(item.phone, item.message).then(() => handleMessage(item.phone, item.message)).catch(error => console.error('bot message error', error));
+      }
+      return;
+    }
+    if (request.method === 'POST' && url.pathname === '/whatsapp/campaigns') {
+      const value = await createCampaign(JSON.parse(await body(request))); response.writeHead(201, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return;
+    }
+    if (request.method === 'GET' && url.pathname === '/whatsapp/campaigns') {
+      await loadCampaignStore(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ campaigns: campaignStore.campaigns.map(campaignSummary) })); return;
+    }
+    const campaignMatch = url.pathname.match(/^\/whatsapp\/campaigns\/([^/]+)(?:\/(send|analytics))?$/);
+    if (campaignMatch) {
+      const campaignId = campaignMatch[1]; await loadCampaignStore();
+      const campaign = campaignStore.campaigns.find(item => item.campaign_id === campaignId); if (!campaign) { response.writeHead(404); response.end('Campaign not found'); return; }
+      if (request.method === 'POST' && campaignMatch[2] === 'send') { const value = await launchCampaign(campaignId); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(value)); return; }
+      if (request.method === 'GET' && (!campaignMatch[2] || campaignMatch[2] === 'analytics')) { response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(campaignSummary(campaign))); return; }
     }
     if (request.method === 'POST' && url.pathname === '/whatsapp/test') {
       const value = JSON.parse(await body(request)); await handleMessage(value.phone || '919999999999', { id: `test-${Date.now()}`, text: { body: value.text || 'Hi' } }); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ ok: true, dryRun })); return;
     }
-    if (request.method === 'GET' && url.pathname === '/whatsapp/health') { response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ ok: true, dryRun, backendUrl, sessions: sessions.size })); return; }
+    if (request.method === 'GET' && url.pathname === '/whatsapp/health') { await loadCampaignStore(); response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ ok: true, dryRun, backendUrl, sessions: sessions.size, campaigns: campaignStore.campaigns.length, campaignMessages: campaignStore.messages.length })); return; }
     response.writeHead(404); response.end('Not found');
   } catch (error) { response.writeHead(500, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: error.message })); }
 });

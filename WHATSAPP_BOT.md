@@ -14,6 +14,33 @@ curl -s -X POST http://localhost:8787/whatsapp/test \
 
 The test endpoint runs the same state machine as a real WhatsApp message. Send the returned next option again with the same phone number. `MENU` resets the conversation.
 
+## Campaigns, delivery receipts and replies
+
+The same public webhook handles both chatbot messages and Meta delivery status events. Campaigns are sent through Meta's approved WhatsApp template API; the webhook is not used to send outbound messages.
+
+Set `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN` and `BOT_DRY_RUN=false`. The template must already be approved in WhatsApp Manager and recipients must have opted in.
+
+Create and send a campaign:
+
+```bash
+curl -X POST https://YOUR-DOMAIN/whatsapp/campaigns \
+  -H 'content-type: application/json' \
+  -d '{"name":"Tomato harvest update","template_name":"tomato_harvest_update","language":"en_US","recipients":["9193332780"],"launch":true}'
+```
+
+For a template with variables, pass Meta template components in `components`. To send later, omit `launch:true`, then call `POST /whatsapp/campaigns/{campaign_id}/send`.
+
+Useful endpoints:
+
+- `GET /whatsapp/campaigns` — list campaigns and message totals
+- `GET /whatsapp/campaigns/{campaign_id}` — campaign details and tracked messages
+- `GET /whatsapp/campaigns/{campaign_id}/analytics` — same data for dashboards
+- `POST /whatsapp/campaigns/{campaign_id}/send` — launch a draft campaign
+
+When Meta posts `sent`, `delivered`, `read`, or `failed` statuses to `/whatsapp/webhook`, the service updates the campaign automatically. An inbound reply is linked to the most recent campaign message for that phone and then continues through the normal KaamSetu bot flow.
+
+Campaign state is stored in `CAMPAIGN_DATA_FILE`. On Render/AWS use a persistent disk or replace this store with the database before relying on it for high-volume campaigns; an ephemeral filesystem can lose analytics during a restart.
+
 ## Meta setup still required
 
 The frontend URL is **not** the webhook URL. Do not enter `/app/` in Meta.

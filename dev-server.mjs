@@ -34,8 +34,7 @@ const server = createServer(async (request, response) => {
       const upstream = await fetch(`${apiBase}${requestUrl.pathname.slice(4)}${requestUrl.search}`, {
         method: request.method,
         headers: {
-          'content-type': request.headers['content-type'] || 'application/json',
-          'ngrok-skip-browser-warning': 'true'
+          'content-type': request.headers['content-type'] || 'application/json'
         },
         body
       });

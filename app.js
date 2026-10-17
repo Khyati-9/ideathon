@@ -164,7 +164,7 @@ const renderWorkers = (workersOverride=null) => {const grid=document.querySelect
 const showExplore = (filter='') => { closeModal(); renderExplore(filter); showView('#explore-view'); window.location.hash='explore'; loadRemoteExplore('jobs'); };
 const showWorkers = () => { closeModal(); renderWorkers(); showView('#workers-view'); window.location.hash='workers'; loadRemoteExplore('workers'); };
 let profileData = JSON.parse(localStorage.getItem('kaamsetu-profile')||'null'); let currentJob = jobs.tomato; let bookingState = 'farmer-review';
-const apiHeaders = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};
+const apiHeaders = {'Content-Type':'application/json'};
 const apiGet = async path => { const response=await fetch(`${API_BASE_URL.replace(/\/$/,'')}${path}`,{headers:apiHeaders}); let result={}; try{result=await response.json();}catch{} if(!response.ok)throw new Error(result?.error||'Could not load data.'); return result; };
 const loadRemoteExplore = async view => {
   if (remoteExploreData) {

@@ -29,13 +29,13 @@ SECRET_KEY = 'django-insecure-=%g&2iyjsjo4^hgirqe$fart60fm!41)=ykhg%=de0@amv$se$
 DEBUG = True
 DEMO_MODE = True
 ALLOWED_HOSTS = [
-    "josef-spiry-overply.ngrok-free.dev",
+    "kaamsetu.phala.work",
     "localhost",
     "127.0.0.1",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://josef-spiry-overply.ngrok-free.dev",
+    "https://kaamsetu.phala.work",
 ]
 AUTH_USER_MODEL = "core.User"
 

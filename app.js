@@ -136,6 +136,10 @@ const loadJobMatches = async job => {
 const loadWorkerMatches = async worker => {
   let exact={total:0,jobs:[]};
   try { exact=await apiGet(workerJobsUrl(worker)); } catch {}
+  exact = {
+    ...exact,
+    jobs: Array.isArray(exact.jobs) ? exact.jobs : (Array.isArray(exact.matches) ? exact.matches : []),
+  };
   const local=frontendJobMatches(worker);
   const merged=[...(exact.jobs||[]),...local].filter((item,index,array)=>index===array.findIndex(other=>String(other.job_id||other.id)===String(item.job_id||item.id)));
   return {total:Math.max(exact.total||0,merged.length),jobs:merged,nearbyFallback:!exact.jobs?.length && local.length>0};
@@ -333,8 +337,8 @@ const refreshFarmerMatchPanel = () => {
   if (panel && typeof renderInlineWorkerMatchCards === 'function') panel.innerHTML = renderInlineWorkerMatchCards();
 };
 setInterval(refreshFarmerMatchPanel, 500);
-const LIVE_API_BASE_URL = 'https://josef-spiry-overply.ngrok-free.dev/api';
-// Keep the live backend in one place so a new ngrok URL is a one-line change.
+const LIVE_API_BASE_URL = 'https://kaamsetu.phala.work/api';
+// Keep the live backend in one place for local file and deployed frontend use.
 // A runtime override is useful for local/staging deployments.
 const isHttpPage = window.location.protocol === 'http:' || window.location.protocol === 'https:';
 const API_BASE_URL = window.KAAMSETU_API_BASE_URL || (isHttpPage ? `${window.location.origin}/api` : LIVE_API_BASE_URL);
